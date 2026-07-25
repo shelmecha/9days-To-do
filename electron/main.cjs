@@ -7,8 +7,8 @@ const path = require('node:path')
 const isDev = !app.isPackaged
 
 /** Fixed vertical frame — must match --app-w / --app-h in src/styles/tokens.css. */
-const WIDTH = 360
-const HEIGHT = 640
+const WIDTH = 300
+const HEIGHT = 500
 
 let win = null
 let tray = null
@@ -39,7 +39,9 @@ function createWindow() {
   })
 
   if (isDev) {
-    win.loadURL('http://localhost:5173')
+    // Vite hops to 5174, 5175, … when the default port is taken, so allow an override
+    // instead of failing to a blank window: VITE_DEV_URL=http://localhost:5175 electron .
+    win.loadURL(process.env.VITE_DEV_URL || 'http://localhost:5173')
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
   }

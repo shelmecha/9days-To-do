@@ -3,7 +3,9 @@
 /*
  * The app is a single fixed-size vertical window (--app-w × --app-h). Because the frame
  * never changes width, there is exactly ONE layout — no desktop/mobile fork. Everything
- * below is tuned for a 360px-wide column, and the window body scrolls when content grows.
+ * below is tuned for a 300px-wide column, and the window body scrolls when content grows.
+ * Spacing is deliberately tight: at this size, chrome is the thing that has to give, not
+ * the task list.
  */
 
 * {
@@ -44,6 +46,7 @@ body {
 
 /* ---------- Window ---------- */
 
+
 .win {
   background: var(--face);
   box-shadow: var(--bevel-out);
@@ -56,7 +59,7 @@ body {
 
 /* When the viewport is smaller than the fixed frame (the packaged exe, or a phone),
    fill it exactly instead of overflowing. */
-@media (max-width: 392px), (max-height: 672px) {
+@media (max-width: 332px), (max-height: 532px) {
   .app {
     padding: 0;
     align-items: stretch;
@@ -74,8 +77,8 @@ body {
   background: var(--title);
   color: var(--title-text);
   font-weight: bold;
-  font-size: var(--fs-base);
-  padding: 4px 4px 4px 7px;
+  font-size: var(--fs-sm);
+  padding: 3px 3px 3px 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -108,7 +111,7 @@ body {
 }
 
 .win__body {
-  padding: 8px 8px 10px;
+  padding: 6px 6px 7px;
   /* The frame is a fixed height, so the task list scrolls internally (flex: 1) and body
      copy is kept short. This stays scrollable as a safety net for long dialog content. */
   overflow-y: auto;
@@ -124,7 +127,7 @@ body {
 .menubar {
   display: flex;
   gap: 2px;
-  padding: 3px 4px;
+  padding: 2px 3px;
   border-bottom: 1px solid var(--shadow);
   flex: 0 0 auto;
 }
@@ -134,7 +137,7 @@ body {
   border: 0;
   font-family: var(--font);
   font-size: var(--fs-sm);
-  padding: 5px 7px;
+  padding: 3px 6px;
   color: var(--text);
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -155,16 +158,16 @@ body {
   font-family: var(--font);
   font-size: var(--fs-base);
   color: var(--text);
-  padding: 6px 12px;
-  min-width: 64px;
-  min-height: 30px;
+  padding: 4px 10px;
+  min-width: 54px;
+  min-height: 26px;
   cursor: default;
 }
 
 .btn:active:not(:disabled) {
   /* Bevel inverts on press, and the label shifts with it. */
   box-shadow: var(--bevel-in);
-  padding: 7px 11px 5px 13px;
+  padding: 5px 9px 3px 11px;
 }
 
 .btn:disabled {
@@ -173,13 +176,13 @@ body {
 }
 
 .btn--lg {
-  padding: 10px 16px;
-  font-size: var(--fs-lg);
+  padding: 8px 12px;
+  font-size: var(--fs-base);
   min-height: var(--touch);
 }
 
 .btn--lg:active {
-  padding: 11px 15px 9px 17px;
+  padding: 9px 11px 7px 13px;
 }
 
 .field {
@@ -188,9 +191,9 @@ body {
   border: 0;
   font-family: var(--font);
   font-size: var(--fs-base);
-  padding: 6px;
+  padding: 4px 5px;
   width: 100%;
-  min-height: 30px;
+  min-height: 26px;
   color: var(--text);
 }
 
@@ -207,15 +210,15 @@ input[type='time'].field {
 .panel {
   box-shadow: var(--bevel-in);
   background: var(--face);
-  padding: 8px;
+  padding: 6px;
 }
 
 /* ---------- Quick add ---------- */
 
 .quickadd {
   display: flex;
-  gap: 5px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 5px;
   flex: 0 0 auto;
 }
 
@@ -225,8 +228,8 @@ input[type='time'].field {
 }
 
 .quickadd .btn {
-  min-width: 52px;
-  padding: 6px 8px;
+  min-width: 40px;
+  padding: 4px 7px;
   flex: 0 0 auto;
 }
 
@@ -240,14 +243,14 @@ input[type='time'].field {
   box-shadow: var(--bevel-in);
   overflow-y: auto;
   flex: 1 1 auto;
-  min-height: 80px;
+  min-height: 60px;
 }
 
 .taskrow {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  padding: 9px 8px;
+  gap: 6px;
+  padding: 6px 6px;
   border-bottom: 1px solid #e8e8e8;
 }
 
@@ -256,8 +259,8 @@ input[type='time'].field {
 }
 
 .taskrow__check {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   margin: 0;
   flex: 0 0 auto;
 }
@@ -285,9 +288,9 @@ input[type='time'].field {
 .taskrow__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .taskrow--done .taskrow__title {
@@ -296,7 +299,7 @@ input[type='time'].field {
 }
 
 .empty {
-  padding: 24px 12px;
+  padding: 18px 12px;
   text-align: center;
   color: var(--shadow);
 }
@@ -313,7 +316,7 @@ input[type='time'].field {
   box-shadow: var(--bevel-in);
   overflow-y: auto;
   flex: 1 1 auto;
-  min-height: 80px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -348,7 +351,7 @@ input[type='time'].field {
   font: inherit;
   color: var(--text);
   text-align: left;
-  padding: 7px 8px;
+  padding: 6px 7px;
 }
 
 .notecard__open:hover .notecard__title {
@@ -493,9 +496,9 @@ input[type='time'].field {
 .tagfilter {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   flex: 0 0 auto;
 }
 
@@ -519,11 +522,11 @@ input[type='time'].field {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 8px;
   z-index: 10;
 }
 
-@media (max-width: 392px), (max-height: 672px) {
+@media (max-width: 332px), (max-height: 532px) {
   .reckoning {
     padding: 0;
     align-items: stretch;
@@ -531,7 +534,7 @@ input[type='time'].field {
 }
 
 /* Full-screen dialogs centre their content vertically — otherwise the copy strands itself
-   at the top of a 640px-tall frame with a large empty void beneath it. */
+   at the top of the frame with a large empty void beneath it. */
 .reckoning .win__body {
   justify-content: center;
 }
@@ -539,12 +542,12 @@ input[type='time'].field {
 .reckoning__progress {
   font-size: var(--fs-sm);
   color: #333;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .reckoning__title {
   font-size: var(--fs-lg);
-  margin: 0 0 6px;
+  margin: 0 0 5px;
   word-break: break-word;
 }
 
@@ -557,8 +560,8 @@ input[type='time'].field {
 
 .reckoning__actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 10px;
 }
 
 .reckoning__actions .btn {
@@ -567,7 +570,7 @@ input[type='time'].field {
 }
 
 .reckoning__hint {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   font-size: var(--fs-sm);
   color: var(--shadow);
 }
@@ -587,15 +590,15 @@ input[type='time'].field {
 /* ---------- Misc ---------- */
 
 .stack > * + * {
-  margin-top: 8px;
+  margin-top: 7px;
 }
 
 .statusbar {
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  margin-top: 8px;
-  padding: 4px 6px;
+  margin-top: 5px;
+  padding: 3px 5px;
   box-shadow: var(--bevel-in);
   font-size: var(--fs-sm);
   color: #333;
@@ -611,7 +614,7 @@ input[type='time'].field {
 .notice {
   font-size: var(--fs-sm);
   color: #333;
-  margin: 6px 0 0;
+  margin: 5px 0 0;
   flex: 0 0 auto;
 }
 
@@ -628,30 +631,26 @@ input[type='time'].field {
 
 .right .btn {
   min-width: 0;
-  padding: 6px 10px;
+  padding: 4px 9px;
 }
 
-.tabs {
+/* Header strip above a list: a label on the left, one action on the right. */
+.listhead {
   display: flex;
-  gap: 2px;
-  margin-bottom: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 5px;
   flex: 0 0 auto;
+  font-size: var(--fs-sm);
+  color: #333;
 }
 
-.tab {
-  background: var(--face);
-  box-shadow: var(--bevel-out);
-  border: 0;
-  font-family: var(--font);
-  font-size: var(--fs-base);
-  padding: 7px 12px;
-  color: var(--text);
-  flex: 1 1 auto;
-}
-
-.tab[aria-selected='true'] {
-  font-weight: bold;
-  box-shadow: var(--bevel-in);
+.listhead .btn {
+  min-width: 0;
+  min-height: 0;
+  padding: 3px 7px;
+  font-size: var(--fs-sm);
 }
 
 .sr-only {

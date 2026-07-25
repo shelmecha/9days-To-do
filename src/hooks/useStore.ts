@@ -71,6 +71,11 @@ export function useStore() {
     setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
   }, [])
 
+  /** Empty the Done list by hand, instead of waiting for the 30-day purge. */
+  const clearCompleted = useCallback(() => {
+    setState((s) => ({ ...s, tasks: s.tasks.filter((t) => t.status !== 'completed') }))
+  }, [])
+
   /** Reckoning decisions persist one at a time, so a mid-reckoning refresh resumes. */
   const keep = useCallback((id: string) => {
     setState((s) => ({
@@ -93,7 +98,14 @@ export function useStore() {
     setState((s) => ({ ...s, lastReckoningDate: localDateString(new Date()) }))
   }, [])
 
-  /** Demo control: rewind the stamp so the reckoning fires on the next render. */
+  /**
+   * Rewind the stamp so the reckoning fires on the next render.
+   *
+   * No longer wired to a button — the "Next day" menu item was removed, because the app is
+   * about finishing today and a control labelled "tomorrow" argued against that. Kept because
+   * it is the only way to exercise the reckoning without waiting overnight: call it from the
+   * console (or re-add a button) when demoing.
+   */
   const simulateTomorrow = useCallback(() => {
     setState((s) => ({
       ...s,
@@ -163,6 +175,7 @@ export function useStore() {
     updateTask,
     setCompleted,
     deleteTask,
+    clearCompleted,
     keep,
     drop,
     finishReckoning,

@@ -9,7 +9,7 @@ interface Props {
   onTogglePin: (id: string) => void
 }
 
-/** "2026-07-26T…" -> "26 Jul". Short on purpose; the card is one 360px-wide line. */
+/** "2026-07-26T…" -> "26 Jul". Short on purpose; the card is one 300px-wide line. */
 function shortDate(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ''

@@ -6,7 +6,7 @@ import { primeAudio } from './lib/chime'
 import { Window } from './components/win95/Window'
 import { TaskRow } from './components/TaskRow'
 import { TaskDetail } from './components/TaskDetail'
-import { ArchiveView } from './components/ArchiveView'
+import { DoneView } from './components/DoneView'
 import { NotesView } from './components/NotesView'
 import { NoteEditor } from './components/NoteEditor'
 import { ReckoningOverlay } from './components/ReckoningOverlay'
@@ -73,11 +73,8 @@ export default function App() {
             <button aria-current={view === 'notes'} onClick={() => setView('notes')}>
               Notes
             </button>
-            <button aria-current={view === 'archive'} onClick={() => setView('archive')}>
-              Archive
-            </button>
-            <button onClick={store.simulateTomorrow} title="Demo: trigger the Reckoning now">
-              Next day
+            <button aria-current={view === 'done'} onClick={() => setView('done')}>
+              Done
             </button>
           </div>
         }
@@ -89,11 +86,12 @@ export default function App() {
             onOpen={setOpenNoteId}
             onTogglePin={store.togglePin}
           />
-        ) : view === 'archive' ? (
-          <ArchiveView
+        ) : view === 'done' ? (
+          <DoneView
             tasks={store.state.tasks}
             today={store.today}
             onRestore={(id) => store.setCompleted(id, false)}
+            onClearAll={store.clearCompleted}
           />
         ) : (
           <>
@@ -147,9 +145,7 @@ export default function App() {
             <ul className="tasklist">
               {visible.length === 0 ? (
                 <li className="empty">
-                  {active.length === 0
-                    ? 'Nothing on the list. Add something above.'
-                    : 'No tasks with that tag.'}
+                  {active.length === 0 ? "Empty. That's the goal." : 'Nothing with that tag.'}
                 </li>
               ) : (
                 visible.map((t) => (
@@ -163,18 +159,15 @@ export default function App() {
               )}
             </ul>
 
+            {/* One status bar carries both the count and the pitch. The window is small and
+                fixed-height, so a second line of copy would push the list out of view — the
+                separate footer notice that used to live here was folded into the right slot. */}
             <div className="statusbar">
               <span>
-                {active.length} active{tagFilter ? ` · filtered by "${tagFilter}"` : ''}
+                {active.length} active{tagFilter ? ` · ${tagFilter}` : ''}
               </span>
-              <span>
-                Last reckoning: {store.state.lastReckoningDate ?? 'never'}
-              </span>
+              <span>keep or drop tomorrow</span>
             </div>
-
-            {/* Kept to one line on purpose: the window height is fixed, so long copy
-                pushes the list out of view. */}
-            <p className="notice">Tomorrow: keep or drop whatever is still here.</p>
           </>
         )}
       </Window>

@@ -89,9 +89,7 @@ export function ReckoningOverlay({ queue, onKeep, onDrop, onFinish }: Props) {
                 Drop it
               </button>
             </div>
-            <p className="reckoning__hint">
-              Dropped tasks move to the Graveyard for 30 days. Nothing is deleted today.
-            </p>
+            <p className="reckoning__hint">Dropping takes it off the list for good.</p>
           </div>
         )}
       </Window>

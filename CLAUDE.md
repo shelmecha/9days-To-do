@@ -70,8 +70,10 @@ reminder that outlived today would contradict the reckoning.
 - Reminders are suppressed while a reckoning is due — one blocking thing at a time.
 - **A closed app cannot fire reminders.** That's why the Electron window hides to the tray instead of quitting.
 
-**"Simulate tomorrow"** in the menu bar rewinds `lastReckoningDate` by a day. It is how the mechanic gets
-demoed without waiting overnight — keep it working.
+**There is no "Next day" button any more.** The menu bar is Today / Notes / Done: the app is about finishing
+*today*, and a control labelled "tomorrow" argued against the whole point. `simulateTomorrow` still exists in
+`useStore` (it rewinds `lastReckoningDate` by a day) because it is the only way to exercise the reckoning without
+waiting overnight — call it from the console, or wire a temporary button, when demoing. Don't delete it.
 
 ## Notebook
 
@@ -122,16 +124,20 @@ Vite + React + TypeScript. No backend, no accounts, no network. State lives in `
   the reckoning is pending.
 - `src/components/win95/` — `Window`, `ShameBadge`, `TagBadge`. Compose these.
 
-Screens: list (active, sorted most-avoided first), Notes (notebook + Notepad editor), Archive (Graveyard +
-Completed tabs), task detail dialog, reckoning overlay.
+Screens: Today (active, sorted most-avoided first), Notes (notebook + Notepad editor), Done (completed only),
+task detail dialog, reckoning overlay. Three menu items, no more — the window is 300px wide.
 
 ## Data notes
 
 - `Task.createdDate` stores the user's **local** date and must not be derived from `createdAt` in UTC. A task
   created at 11pm local would look like "tomorrow" and be skipped by the next reckoning.
 - Dropped/completed tasks are archived, then hard-deleted after `PURGE_AFTER_DAYS` (30), applied on load.
-- **Restoring out of the archive is asymmetric on purpose.** A completed task can be un-ticked back to `active`
-  in Archive → Completed, because ticking something off is easy to do by accident (a stray click, or the reminder
+  `clearCompleted` in `useStore` empties the Done list on demand (two-step confirm in `DoneView`).
+- **There is no view for dropped tasks.** The Graveyard screen was removed: a drop is a decision to stop caring,
+  and a screen full of corpses invites re-litigating it. The `dropped` status and its 30-day purge still exist —
+  that machinery is what keeps `drop` cheap and tested — the tasks are simply never shown again.
+- **Restoring out of Done is asymmetric on purpose.** A completed task can be un-ticked back to `active`,
+  because ticking something off is easy to do by accident (a stray click, or the reminder
   dialog's "Mark done" — that is exactly how it came up). A **dropped** task has no undo: that decision was made
   deliberately, in a reckoning, and an escape hatch there would hollow out the mechanic. Don't add one.
 - Changing the shape of `Task` or `AppState` breaks existing saved data. Either bump the `KEY` in `storage.ts` or
@@ -144,16 +150,21 @@ Completed tabs), task detail dialog, reckoning overlay.
 - **The retro theme never costs accessibility.** Real semantics, real keyboard support, visible focus (the dotted
   outline is both period-accurate and usable). Modals use `role="dialog"` + `aria-modal` and go through
   `useDialog`, which moves focus in **and restores it on close** — see Dialogs above for why the restore matters.
-- **The app is a fixed-size vertical window: 360 × 640.** `--app-w` / `--app-h` in `tokens.css` must stay in sync
+- **The app is a fixed-size vertical window: 300 × 500.** `--app-w` / `--app-h` in `tokens.css` must stay in sync
   with `WIDTH` / `HEIGHT` in `electron/main.cjs`, which locks the outer window (`resizable: false`,
-  `useContentSize: true`). There is exactly **one layout** — no desktop/mobile fork.
-- Because the height is fixed, **body copy must stay short**. The task list is the flex child that absorbs space
-  (`flex: 1`); long paragraphs push the status bar off the bottom edge. This already happened once — the footer
-  notice had to be cut to a single line, and again when an Archive notice wrapped to two.
+  `useContentSize: true`), **and with the two `@media` guards in `global.css`** (`max-width: 332px`,
+  `max-height: 532px` = the frame plus the 16px `.app` padding on each side), which collapse the frame to fill a
+  viewport smaller than itself. There is exactly **one layout** — no desktop/mobile fork.
+- Chrome is what gives, not the list: paddings are deliberately tight (`.win__body` 6px, `.taskrow` 6px, buttons
+  26px tall) so the 300 × 500 frame still shows ~8 rows. Don't "breathe" them back out.
+- Because the height is fixed, **body copy must stay short** — one line, always. The task list is the flex child
+  that absorbs space (`flex: 1`); long paragraphs push the status bar off the bottom edge. This already happened
+  twice. The list view no longer has a footer notice at all: its one line of pitch lives in the right slot of
+  `.statusbar` ("keep or drop tomorrow"), which costs no extra vertical space.
 - **View components return a fragment, not a wrapper `<div>`.** `.tasklist` / `.notelist` grow via `flex: 1` and
   need `.win__body` as their *direct* flex parent. A wrapper breaks the chain, and the list silently hugs its
-  content instead of filling the frame — leaving a grey void. `ArchiveView` shipped with this bug; `NotesView`
-  and the list in `App.tsx` are fragments for the same reason.
+  content instead of filling the frame — leaving a grey void. The old ArchiveView shipped with this bug;
+  `DoneView`, `NotesView` and the list in `App.tsx` are fragments for the same reason.
 - `vite.config.ts` and `vitest.config.ts` are deliberately separate — vitest bundles its own Vite copy, and one
   shared config makes the two `Plugin` types collide.
 
@@ -190,7 +201,8 @@ Stats/streaks, import/export JSON, cross-device sync, accounts, i18n. Don't add 
 (Reminders and the notebook *were* on this list and are now built — see above.)
 
 **Known accepted risk:** data lives only in this browser's `localStorage` and there is no export, so clearing site
-data destroys it permanently. The list footer says so. Export is the first thing to revisit.
+data destroys it permanently. Nothing in the UI says so any more — the footer notice was cut when the window
+shrank. Export is the first thing to revisit.
 
 ## Testing
 
@@ -200,9 +212,9 @@ queue rules, shame tier boundaries, purge retention edges (including that it nev
 due-ness (on the minute, grace window, once-per-day, midnight not wrapping), and note sorting/preview/search.
 There are no component tests yet.
 
-Manual checks these can't cover: click **"Next day"** to trigger a reckoning, confirm it does **not** re-fire on
-the next reload, refresh mid-reckoning to confirm it resumes, hear the chime via **Test** in task properties, and
-confirm closing the exe leaves it alive in the tray.
+Manual checks these can't cover: trigger a reckoning (rewind `lastReckoningDate` in `localStorage`, or call
+`simulateTomorrow`), confirm it does **not** re-fire on the next reload, refresh mid-reckoning to confirm it
+resumes, hear the chime via **Test** in task properties, and confirm closing the exe leaves it alive in the tray.
 
 One regression worth re-checking by hand after touching any dialog: let a reminder fire, dismiss it, then type
 **without clicking anything first**. The text must appear in the quick-add box. If it doesn't, focus restore is
@@ -210,7 +222,13 @@ broken again.
 
 ### Driving the packaged app without a person at the keyboard
 
-Both of these cost real time to learn the hard way:
+For a **layout** check there is a much cheaper route than driving the exe: point a throwaway Electron main script
+at the dev server (`win.loadURL('http://localhost:5173')`, `useContentSize: true` at the frame size) and call
+`win.webContents.capturePage()`. It returns the renderer's own pixels regardless of window order, and the same
+script can drive the UI through `executeJavaScript` (click the menu, seed tasks, rewind `localStorage` and reload
+to force a reckoning). No `PrintWindow`, no packaging, no 20-second stub extraction.
+
+For the packaged exe, both of these cost real time to learn the hard way:
 
 - **Capture with `PrintWindow` (user32), flag `2`.** It grabs the window's own pixels even when the window is
   behind others. Plain `CopyFromScreen` captures whatever happens to be in front, which is actively misleading —

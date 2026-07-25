@@ -40,4 +40,4 @@ export interface AppState {
   lastReckoningDate: string | null
 }
 
-export type View = 'list' | 'notes' | 'archive'
+export type View = 'list' | 'notes' | 'done'

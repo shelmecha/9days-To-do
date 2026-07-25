@@ -127,11 +127,9 @@ export function TaskDetail({ task, onSave, onDelete, onClose }: Props) {
                 </button>
               )}
             </div>
+            {/* Short on purpose: the frame is small and this sits inside a tall dialog. */}
             {isPast && (
-              <p className="notice">
-                That time has already passed today — it will only sound if it's within the last 2
-                hours, otherwise it waits until tomorrow.
-              </p>
+              <p className="notice">Already passed — sounds only if within 2 hours.</p>
             )}
           </div>
 
