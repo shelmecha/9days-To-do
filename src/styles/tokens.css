@@ -1,0 +1,46 @@
+:root {
+  /* Windows 95 system palette */
+  --face: #c0c0c0;
+  --face-light: #dfdfdf;
+  --hilite: #ffffff;
+  --shadow: #808080;
+  --dk-shadow: #000000;
+  --title: #000080;
+  --title-text: #ffffff;
+  --title-inactive: #808080;
+  --desktop: #008080;
+  --text: #000000;
+  --disabled: #808080;
+  --field: #ffffff;
+
+  /* Notebook paper. #ffffe1 is the genuine Win95 tooltip yellow. */
+  --note: #ffffe1;
+  --note-pinned: #fff8c4;
+
+  --warn: #fcf0a8;
+  --warn-border: #806b00;
+  --bad: #a80000;
+  --worst: #7a0000;
+
+  --font: "MS Sans Serif", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  --fs-sm: 11px;
+  --fs-base: 12px;
+  --fs-lg: 15px;
+  --fs-xl: 20px;
+
+  /* Classic 2px bevels: outset = raised control, inset = sunken field */
+  --bevel-out: inset -1px -1px 0 0 var(--dk-shadow), inset 1px 1px 0 0 var(--face-light),
+    inset -2px -2px 0 0 var(--shadow), inset 2px 2px 0 0 var(--hilite);
+  --bevel-in: inset 1px 1px 0 0 var(--shadow), inset -1px -1px 0 0 var(--face-light),
+    inset 2px 2px 0 0 var(--dk-shadow), inset -2px -2px 0 0 var(--hilite);
+
+  /* Minimum comfortable touch target */
+  --touch: 44px;
+
+  /* The app is a fixed-size vertical window. The Electron shell locks its outer size to
+     match; in a browser the frame is centered at these dimensions. */
+  --app-w: 360px;
+  --app-h: 640px;
+}

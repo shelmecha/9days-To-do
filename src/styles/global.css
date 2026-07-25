@@ -1,0 +1,667 @@
+@import './tokens.css';
+
+/*
+ * The app is a single fixed-size vertical window (--app-w × --app-h). Because the frame
+ * never changes width, there is exactly ONE layout — no desktop/mobile fork. Everything
+ * below is tuned for a 360px-wide column, and the window body scrolls when content grows.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--desktop);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  overflow: hidden; /* the frame is fixed; the body must never scroll */
+  -webkit-font-smoothing: none;
+}
+
+/* Period-accurate focus ring that is also genuinely usable. */
+:focus-visible {
+  outline: 1px dotted var(--dk-shadow);
+  outline-offset: 1px;
+}
+
+/* ---------- App shell ---------- */
+
+.app {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ---------- Window ---------- */
+
+.win {
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  padding: 3px;
+  width: var(--app-w);
+  height: var(--app-h);
+  display: flex;
+  flex-direction: column;
+}
+
+/* When the viewport is smaller than the fixed frame (the packaged exe, or a phone),
+   fill it exactly instead of overflowing. */
+@media (max-width: 392px), (max-height: 672px) {
+  .app {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .win {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    box-shadow: none;
+  }
+}
+
+.titlebar {
+  background: var(--title);
+  color: var(--title-text);
+  font-weight: bold;
+  font-size: var(--fs-base);
+  padding: 4px 4px 4px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+  user-select: none;
+  /* The Electron window is frameless: this bar is what you drag it by. */
+  -webkit-app-region: drag;
+}
+
+.titlebar__buttons {
+  display: flex;
+  gap: 2px;
+  -webkit-app-region: no-drag; /* buttons must stay clickable */
+}
+
+.titlebar__btn {
+  width: 16px;
+  height: 14px;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  border: 0;
+  font-family: var(--font);
+  font-size: 9px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  padding: 0;
+}
+
+.win__body {
+  padding: 8px 8px 10px;
+  /* The frame is a fixed height, so the task list scrolls internally (flex: 1) and body
+     copy is kept short. This stays scrollable as a safety net for long dialog content. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Menu bar ---------- */
+
+.menubar {
+  display: flex;
+  gap: 2px;
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--shadow);
+  flex: 0 0 auto;
+}
+
+.menubar button {
+  background: transparent;
+  border: 0;
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  padding: 5px 7px;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.menubar button[aria-current='true'] {
+  background: var(--title);
+  color: var(--title-text);
+}
+
+/* ---------- Controls ---------- */
+
+.btn {
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  border: 0;
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  color: var(--text);
+  padding: 6px 12px;
+  min-width: 64px;
+  min-height: 30px;
+  cursor: default;
+}
+
+.btn:active:not(:disabled) {
+  /* Bevel inverts on press, and the label shifts with it. */
+  box-shadow: var(--bevel-in);
+  padding: 7px 11px 5px 13px;
+}
+
+.btn:disabled {
+  color: var(--disabled);
+  text-shadow: 1px 1px 0 var(--hilite);
+}
+
+.btn--lg {
+  padding: 10px 16px;
+  font-size: var(--fs-lg);
+  min-height: var(--touch);
+}
+
+.btn--lg:active {
+  padding: 11px 15px 9px 17px;
+}
+
+.field {
+  background: var(--field);
+  box-shadow: var(--bevel-in);
+  border: 0;
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  padding: 6px;
+  width: 100%;
+  min-height: 30px;
+  color: var(--text);
+}
+
+textarea.field {
+  resize: none;
+  min-height: 56px;
+  font-family: var(--font);
+}
+
+input[type='time'].field {
+  min-width: 0;
+}
+
+.panel {
+  box-shadow: var(--bevel-in);
+  background: var(--face);
+  padding: 8px;
+}
+
+/* ---------- Quick add ---------- */
+
+.quickadd {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+.quickadd .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.quickadd .btn {
+  min-width: 52px;
+  padding: 6px 8px;
+  flex: 0 0 auto;
+}
+
+/* ---------- Task list ---------- */
+
+.tasklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--field);
+  box-shadow: var(--bevel-in);
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 80px;
+}
+
+.taskrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 9px 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.taskrow:last-child {
+  border-bottom: 0;
+}
+
+.taskrow__check {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.taskrow__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.taskrow__title {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  width: 100%;
+  word-break: break-word;
+}
+
+.taskrow__title:hover {
+  text-decoration: underline;
+}
+
+.taskrow__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.taskrow--done .taskrow__title {
+  color: var(--shadow);
+  text-decoration: line-through;
+}
+
+.empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--shadow);
+}
+
+/* ---------- Notebook ----------
+   Sticky-note yellow (#ffffe1) is the real Win95 tooltip colour, so it reads as period
+   furniture while still setting notes apart from the white task list at a glance. */
+
+.notelist {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  background: var(--field);
+  box-shadow: var(--bevel-in);
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notecard {
+  display: flex;
+  align-items: stretch;
+  background: var(--note);
+  box-shadow: var(--bevel-out);
+  /* Navy spine: the one flourish that makes a card read as a card, not a list row. */
+  border-left: 4px solid var(--shadow);
+}
+
+.notecard--pinned {
+  border-left-color: var(--title);
+  background: var(--note-pinned);
+}
+
+.notecard__open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'title date'
+    'preview preview';
+  gap: 1px 6px;
+  align-items: baseline;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  padding: 7px 8px;
+}
+
+.notecard__open:hover .notecard__title {
+  text-decoration: underline;
+}
+
+.notecard__title {
+  grid-area: title;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notecard__date {
+  grid-area: date;
+  font-size: var(--fs-sm);
+  color: #6b6b4a;
+  white-space: nowrap;
+}
+
+.notecard__preview {
+  grid-area: preview;
+  font-size: var(--fs-sm);
+  color: #444;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notecard__pin {
+  flex: 0 0 auto;
+  width: 26px;
+  background: none;
+  border: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  font-size: 11px;
+  /* Unpinned reads as an empty slot; pinned lights up. */
+  filter: grayscale(1);
+  opacity: 0.35;
+  padding: 0;
+}
+
+.notecard__pin[aria-pressed='true'] {
+  filter: none;
+  opacity: 1;
+}
+
+.notecard__pin:hover {
+  opacity: 0.8;
+}
+
+/* ---------- Note editor ---------- */
+
+.noteeditor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.noteeditor__title {
+  font-weight: bold;
+  font-size: var(--fs-lg);
+}
+
+.noteeditor__body {
+  /* The editor is the one place worth breaking the UI font: prose wants a text face, and a
+     monospace body is exactly what Notepad looked like. */
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  background: var(--note);
+  flex: 1 1 auto;
+  min-height: 0;
+  resize: none;
+}
+
+.noteeditor__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.noteeditor__count {
+  font-size: var(--fs-sm);
+  color: var(--shadow);
+}
+
+/* ---------- Badges ---------- */
+
+.badge {
+  font-size: var(--fs-sm);
+  padding: 1px 5px;
+  border: 1px solid var(--shadow);
+  background: var(--face);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.badge--quiet {
+  border-color: var(--shadow);
+  color: #333;
+}
+
+.badge--warn {
+  background: var(--warn);
+  border-color: var(--warn-border);
+}
+
+.badge--bad {
+  background: var(--bad);
+  border-color: var(--dk-shadow);
+  color: #fff;
+  font-weight: bold;
+}
+
+.badge--worst {
+  background: var(--worst);
+  border-color: var(--dk-shadow);
+  color: #fff;
+  font-weight: bold;
+}
+
+.badge--tag {
+  background: var(--face);
+  border-style: dotted;
+  color: #222;
+}
+
+.badge--remind {
+  background: #dfe8ff;
+  border-color: var(--title);
+  color: #001a66;
+}
+
+/* ---------- Tag filter ---------- */
+
+.tagfilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex: 0 0 auto;
+}
+
+.tagfilter button[aria-pressed='true'] {
+  box-shadow: var(--bevel-in);
+}
+
+.tagfilter .btn {
+  min-width: 0;
+  min-height: 0;
+  padding: 3px 7px;
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Overlays (reckoning, reminder, task detail) ---------- */
+
+.reckoning {
+  position: fixed;
+  inset: 0;
+  background: var(--desktop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+
+@media (max-width: 392px), (max-height: 672px) {
+  .reckoning {
+    padding: 0;
+    align-items: stretch;
+  }
+}
+
+/* Full-screen dialogs centre their content vertically — otherwise the copy strands itself
+   at the top of a 640px-tall frame with a large empty void beneath it. */
+.reckoning .win__body {
+  justify-content: center;
+}
+
+.reckoning__progress {
+  font-size: var(--fs-sm);
+  color: #333;
+  margin: 0 0 8px;
+}
+
+.reckoning__title {
+  font-size: var(--fs-lg);
+  margin: 0 0 6px;
+  word-break: break-word;
+}
+
+.reckoning__notes {
+  white-space: pre-wrap;
+  margin: 6px 0 0;
+  color: #222;
+  font-size: var(--fs-sm);
+}
+
+.reckoning__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reckoning__actions .btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.reckoning__hint {
+  margin: 10px 0 0;
+  font-size: var(--fs-sm);
+  color: var(--shadow);
+}
+
+.dialog__row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dialog__icon {
+  font-size: 24px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+/* ---------- Misc ---------- */
+
+.stack > * + * {
+  margin-top: 8px;
+}
+
+.statusbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 6px;
+  box-shadow: var(--bevel-in);
+  font-size: var(--fs-sm);
+  color: #333;
+  flex: 0 0 auto;
+}
+
+.statusbar span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notice {
+  font-size: var(--fs-sm);
+  color: #333;
+  margin: 6px 0 0;
+  flex: 0 0 auto;
+}
+
+.label {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.right {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.right .btn {
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 6px;
+  flex: 0 0 auto;
+}
+
+.tab {
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  border: 0;
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  padding: 7px 12px;
+  color: var(--text);
+  flex: 1 1 auto;
+}
+
+.tab[aria-selected='true'] {
+  font-weight: bold;
+  box-shadow: var(--bevel-in);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
