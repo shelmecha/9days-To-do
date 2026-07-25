@@ -175,12 +175,24 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
 - It is **`.cjs`, not `.js`** — `package.json` sets `"type": "module"`, which Electron's main process rejects.
 - `vite.config.ts` sets **`base: './'`**. Absolute asset paths 404 over `file://`, so the packaged window would
   render blank. Don't remove it.
+- In dev the shell loads `VITE_DEV_URL` if set, else `http://localhost:5173`. Vite hops to 5174/5175 when the
+  default port is taken, which otherwise gives you a blank frameless window and no clue why:
+  `VITE_DEV_URL=http://localhost:5175 npx electron .`
 - The window is **frameless** (`frame: false`) — the app's own Win95 title bar is the real chrome. Its buttons work
   via `electron/preload.cjs` → `window.win95` (see `src/lib/desktop.ts`), and `.titlebar` carries
   `-webkit-app-region: drag` so the window can be moved. In a plain browser `window.win95` is absent and the
   buttons fall back to decorative.
 - **Closing hides to the tray, it does not quit** — reminders can't fire from a closed app. Quitting is only via
   the tray menu. `requestSingleInstanceLock` prevents a second copy double-chiming.
+- **The lock makes `npm run electron:dev` fail silently while the exe is running.** A packaged copy sitting in the
+  tray owns the lock, so the dev instance exits 0 with no output and no window — it looks like a crash, and the
+  real cause is invisible because the tray copy is hidden. Check `Get-Process | Where ProcessName -match '^9days'`
+  before debugging anything else, and quit the tray copy first.
+- **Dev Electron and the packaged exe have separate `localStorage`.** Different userData dirs, so the dev shell
+  opens with an empty list even when the exe is full of tasks. Nothing is lost; don't go looking for a data bug.
+- Observed once, undiagnosed: after `Start-Process` on the fresh exe, the 300×500 window existed but stayed
+  `IsWindowVisible = False` for ~35s; launching the exe again (`second-instance` → `showWindow`) brought it up.
+  Worth remembering before concluding a build is broken.
 - **Double-clicking the exe while it's hidden takes 15–20 seconds to bring the window back**, with no feedback in
   the meantime. `second-instance` → `showWindow` is wired up correctly; the delay is the portable stub
   re-extracting ~72 MB to a temp dir before Electron even starts. Measured, not guessed. A user will conclude the
