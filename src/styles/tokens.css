@@ -17,6 +17,10 @@
   --note: #ffffe1;
   --note-pinned: #fff8c4;
 
+  /* Tick green. Same value as COLORS.check in scripts/make-icons.mjs, which draws the tray and
+     exe icons — keep the two in step so the app mark and the in-app tick match. */
+  --check: #007000;
+
   --warn: #fcf0a8;
   --warn-border: #806b00;
   --bad: #a80000;

@@ -25,8 +25,23 @@ app.commandLine.appendSwitch('disable-lcd-text')
 const WIDTH = 300
 const HEIGHT = 500
 
-const CAPTURE_WIDTH = 150
-const CAPTURE_HEIGHTS = { idle: 100, input: 150 }
+/**
+ * Quick Capture widget geometry. These are the OUTER window sizes, and they must equal the
+ * .capture box model in src/styles/global.css exactly — see the comment on that block:
+ *   idle  = 3 + [26 strip centred in 34]                  + 3 = 40
+ *   input = 3 + 26 (.field) + 4 (--gap) + 26 (strip)      + 3 = 62
+ * Too small and the strip clips silently (the widget is overflow:hidden); too large and you get
+ * a dead grey band.
+ *
+ * The idle height is 40 rather than the 28 the content needs because Windows enforces a minimum
+ * of 39px (SM_CYMINTRACK) on any RESIZABLE window, and applyCaptureBounds has to flip resizable
+ * on to resize at all. Measured: a requested 28 comes back as 39, and setMinimumSize(1, 1) does
+ * not lift it. Width has no such floor.
+ */
+const CAPTURE_SIZES = {
+  idle: { width: 112, height: 40 },
+  input: { width: 200, height: 62 },
+}
 const CAPTURE_MARGIN = 12
 
 let win = null
@@ -106,21 +121,25 @@ function createWindow() {
  * 2. A single atomic `setBounds`, not `setSize` + `setPosition` — no intermediate frame where the
  *    window is the new size at the old position.
  */
-function applyCaptureBounds(height) {
+function applyCaptureBounds(size) {
   if (!win || captureX === null || captureBottom === null) return
+  const { width, height } = size
 
   const display = screen.getDisplayNearestPoint({ x: captureX, y: captureBottom - height })
   const wa = display.workArea
-  const x = Math.max(wa.x, Math.min(captureX, wa.x + wa.width - CAPTURE_WIDTH))
+  const x = Math.max(wa.x, Math.min(captureX, wa.x + wa.width - width))
   // Never let the bottom edge fall past the work area — that is what puts it under the taskbar.
   const bottom = Math.max(wa.y + height, Math.min(captureBottom, wa.y + wa.height))
 
-  captureX = x
-  captureBottom = bottom
+  // The clamp result is deliberately NOT written back to captureX/captureBottom. Both clamp
+  // bounds depend on the current size, so storing them would let the wide 'input' state drag the
+  // anchor leftwards every time it opened near the right edge of the screen, and never give it
+  // back — the same compounding drift as the setSize bug above, arriving by a different route.
+  // captureX/captureBottom are the USER's anchor: they move on a real drag, or on capture:enter.
 
   suppressMoved = true
   win.setResizable(true)
-  win.setBounds({ x, y: bottom - height, width: CAPTURE_WIDTH, height })
+  win.setBounds({ x, y: bottom - height, width, height })
   win.setResizable(false)
   suppressMoved = false
 }
@@ -228,9 +247,19 @@ if (!app.requestSingleInstanceLock()) {
         captureBottom = wa.y + wa.height - CAPTURE_MARGIN
       }
 
-      // applyCaptureBounds clamps to the current work area, so a position saved on a monitor
-      // that has since been unplugged or rescaled still lands somewhere reachable.
-      applyCaptureBounds(CAPTURE_HEIGHTS.idle)
+      // Sanitise the anchor ONCE, here, against the resting size — so a position saved on a
+      // monitor that has since been unplugged or rescaled still lands somewhere reachable.
+      // applyCaptureBounds itself must not do this: it runs on every resize, and clamping the
+      // stored anchor per-size is what would make the widget walk (see the note there).
+      {
+        const { width, height } = CAPTURE_SIZES.idle
+        const wa = screen.getDisplayNearestPoint({ x: captureX, y: captureBottom - height })
+          .workArea
+        captureX = Math.max(wa.x, Math.min(captureX, wa.x + wa.width - width))
+        captureBottom = Math.max(wa.y + height, Math.min(captureBottom, wa.y + wa.height))
+      }
+
+      applyCaptureBounds(CAPTURE_SIZES.idle)
       // 'screen-saver' is the level that floats above the Windows taskbar.
       win.setAlwaysOnTop(true, 'screen-saver')
       win.setSkipTaskbar(true)
@@ -238,7 +267,7 @@ if (!app.requestSingleInstanceLock()) {
 
     ipcMain.on('capture:resize', (_e, mode) => {
       if (!win || !captureActive) return
-      applyCaptureBounds(CAPTURE_HEIGHTS[mode] ?? CAPTURE_HEIGHTS.idle)
+      applyCaptureBounds(CAPTURE_SIZES[mode] ?? CAPTURE_SIZES.idle)
     })
 
     ipcMain.on('capture:exit', () => {

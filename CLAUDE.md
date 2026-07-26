@@ -210,6 +210,17 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
   live bounds back and building the next position on top of them is what let the error compound into that
   downward walk. Our own `setBounds` also fires `moved`, hence the `suppressMoved` guard — without it the anchor
   overwrites itself.
+- **`applyCaptureBounds` must NOT write its clamped result back to the anchor.** Both clamp bounds depend on the
+  current size, and the widget has two sizes. Storing the clamp would let the wide `input` state drag the anchor
+  leftwards every time it opened near the right edge of the screen and never give it back — the same compounding
+  drift as the `setSize` bug, arriving by a different route. The anchor moves only on a real drag or on
+  `capture:enter`, which is also where the once-per-session "is this saved position still on a real monitor"
+  sanitise lives.
+- **Windows enforces a minimum window height of 39px (`SM_CYMINTRACK`) on any *resizable* window** — and since
+  every capture resize has to flip `resizable` on, that floor applies to the widget. Measured: a requested 28
+  comes back as 39, and `setMinimumSize(1, 1)` does **not** lift it. There is no floor on width (80px is fine).
+  This is why the idle strip is 40px tall when its content only needs 28; the extra space is absorbed by
+  `justify-content: center` rather than by mode-specific padding, so one 26px strip serves both states.
 - **Closing hides to the tray, it does not quit** — reminders can't fire from a closed app. Quitting is only via
   the tray menu. `requestSingleInstanceLock` prevents a second copy double-chiming.
 - **The lock makes `npm run electron:dev` fail silently while the exe is running.** A packaged copy sitting in the

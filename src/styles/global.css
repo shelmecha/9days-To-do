@@ -742,7 +742,24 @@ input[type='time'].field {
   border: 0;
 }
 
-/* ---------- Quick Capture Widget ---------- */
+/* ---------- Quick Capture widget ----------
+ *
+ * A floating icon strip: 112×40 at rest, 200×62 with the input open.
+ *
+ * THOSE NUMBERS ARE DUPLICATED in CAPTURE_SIZES in electron/main.cjs and must agree with the box
+ * model below, or the content clips (this is overflow:hidden — a scrollbar in a 40px window would
+ * be absurd) or leaves a dead grey band:
+ *   idle  = 3 + [26 strip centred in 34] + 3 = 40
+ *   input = 3 + 26 (.field) + 4 (--gap) + 26 (strip) + 3 = 62
+ *
+ * Why 40 and not 28, which is all the content needs: Windows enforces a minimum height of 39px
+ * (SM_CYMINTRACK) on any RESIZABLE window, and main.cjs must briefly flip resizable on to resize
+ * at all. Measured — a requested 28 comes back as 39, and setMinimumSize(1,1) does not lift it.
+ * 40 is the smallest even number above the floor. The strip is centred in the leftover space
+ * rather than padded, so the same 26px row serves both states unchanged.
+ *
+ * There is no title bar: the widget itself is the drag surface and every control opts out.
+ */
 
 .capture {
   height: 100%;
@@ -752,77 +769,101 @@ input[type='time'].field {
   padding: 3px;
   display: flex;
   flex-direction: column;
-}
-
-.capture__bar {
-  background: var(--title);
-  color: var(--title-text);
-  font-weight: bold;
-  font-size: var(--fs-base);
-  line-height: var(--lh);
-  padding: 3px 3px 3px 6px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex: 0 0 auto;
+  justify-content: center; /* absorbs the 8px the OS height floor forces on the idle state */
+  gap: var(--gap);
+  overflow: hidden;
   user-select: none;
   -webkit-app-region: drag;
 }
 
-.capture__bar .titlebar__btn {
+/* Not optional. An <input> inside a drag region cannot be clicked, focused or selected at all —
+   Chromium hands the mousedown to the window manager instead. */
+.capture button,
+.capture .field {
   -webkit-app-region: no-drag;
 }
 
-.capture__body {
-  padding: 8px 6px;
-  flex: 1;
+/* Fixed 26px (4 + 18 + 4); never let it stretch to fill. */
+.capture .field {
+  flex: 0 0 26px;
+  user-select: text;
+}
+
+.capture__strip {
+  flex: 0 0 26px;
+  height: 26px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;
+  align-items: center;
+  gap: 2px;
 }
 
-.capture__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Win95 rebar gripper: two raised 1px ridges, lit from the top left. Pure CSS, no image — with
+   the title bar gone, this carries the entire "you can move me" affordance. */
+.capture__grip {
+  flex: 0 0 6px;
+  align-self: stretch;
+  margin-right: 2px;
+  padding: 3px 0; /* even inset: a 20px ridge in the 26px row */
+  background-origin: padding-box;
+  background-clip: content-box;
+  background-image: linear-gradient(
+    90deg,
+    var(--hilite) 0 1px,
+    var(--shadow) 1px 2px,
+    transparent 2px 3px,
+    var(--hilite) 3px 4px,
+    var(--shadow) 4px 5px,
+    transparent 5px 6px
+  );
+  cursor: move;
 }
 
-.capture__actions .btn {
-  width: 100%;
-  text-align: center;
-}
-
-.capture__input-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.capture__input-wrapper .field {
-  flex: 1;
-  min-height: auto;
-  padding: 4px 6px;
-}
-
-.capture__input-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.capture__input-buttons .btn {
-  flex: 1;
-  min-width: 0;
-}
-
-.capture__saved {
-  text-align: center;
-  padding: 12px 6px;
-  color: var(--text-muted);
+/* 5 + 16 icon + 5 = 26, matching every other control height in the app. The free space is 10 —
+   even — so the icon centres on whole pixels. */
+.capture__icon {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  display: grid;
+  place-items: center;
+  font-family: var(--font);
   font-size: var(--fs-base);
-  line-height: var(--lh);
+  line-height: 26px; /* the restore glyph: (26 - 12 natural line box) / 2 = 7px, integral */
+  color: var(--text);
+  cursor: default;
+}
+
+/* Latched while its input is open, and pressed on click — the bevel inverts and the artwork
+   moves with it, the way every Win95 control does. */
+.capture__icon[aria-pressed='true'],
+.capture__icon:active {
+  box-shadow: var(--bevel-in);
+}
+
+.capture__icon[aria-pressed='true'] svg,
+.capture__icon:active svg {
+  transform: translate(1px, 1px);
+}
+
+/* Held for 900ms after a save. No size change: the widget collapsing back to the strip is the
+   loud signal, and this strip is far too narrow for the words "Saved to-do". The sentence is
+   announced by the sr-only role="status" instead. */
+.capture__icon--saved {
+  box-shadow: var(--bevel-in);
+  background: var(--note-pinned);
+}
+
+.capture__icon svg {
+  display: block;
+  pointer-events: none; /* a click always resolves to the button, never the artwork */
+}
+
+/* Pushed to the right edge. This auto margin is where all the width slack lives, and the bare
+   face it exposes is the widest part of the drag surface. */
+.capture__icon--restore {
+  margin-left: auto;
 }
