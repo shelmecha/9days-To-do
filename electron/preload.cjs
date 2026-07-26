@@ -6,4 +6,7 @@ contextBridge.exposeInMainWorld('win95', {
   minimize: () => ipcRenderer.send('win:minimize'),
   /** Hides to the system tray rather than quitting, so reminders keep working. */
   close: () => ipcRenderer.send('win:close'),
+  enterCapture: () => ipcRenderer.invoke('capture:enter'),
+  exitCapture: () => ipcRenderer.send('capture:exit'),
+  setCaptureSize: (mode) => ipcRenderer.send('capture:resize', mode),
 })

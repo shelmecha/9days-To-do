@@ -135,6 +135,22 @@ export function useStore() {
     return note.id
   }, [])
 
+  /** Creates a note with a body immediately (used by quick capture). */
+  const quickAddNote = useCallback((body: string) => {
+    const trimmed = body.trim()
+    if (!trimmed) return
+    const now = new Date().toISOString()
+    const note: Note = {
+      id: newId(),
+      title: '',
+      body: trimmed,
+      pinned: false,
+      createdAt: now,
+      updatedAt: now,
+    }
+    setState((s) => ({ ...s, notebook: [note, ...s.notebook] }))
+  }, [])
+
   const updateNote = useCallback((id: string, patch: Partial<Note>) => {
     setState((s) => ({
       ...s,
@@ -183,6 +199,7 @@ export function useStore() {
     resetAll,
     markReminded,
     addNote,
+    quickAddNote,
     updateNote,
     deleteNote,
     togglePin,

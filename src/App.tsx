@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { View } from './types'
 import { useStore } from './hooks/useStore'
 import { useReminders } from './hooks/useReminders'
 import { primeAudio } from './lib/chime'
+import { desktopControls } from './lib/desktop'
 import { Window } from './components/win95/Window'
+import { QuickCapture } from './components/QuickCapture'
 import { TaskRow } from './components/TaskRow'
 import { TaskDetail } from './components/TaskDetail'
 import { DoneView } from './components/DoneView'
@@ -19,14 +21,23 @@ export default function App() {
   const [openId, setOpenId] = useState<string | null>(null)
   const [openNoteId, setOpenNoteId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [captureMode, setCaptureMode] = useState(false)
 
-  // Reminders stay silent during a reckoning — one blocking thing at a time.
+  // Reminders stay silent during a reckoning or capture mode — one blocking thing at a time.
   const reminders = useReminders(
     store.state.tasks,
     store.today,
     store.markReminded,
-    !store.reckoningDue,
+    !store.reckoningDue && !captureMode,
   )
+
+  // Reckoning takes precedence over capture mode
+  useEffect(() => {
+    if (store.reckoningDue && captureMode) {
+      desktopControls()?.exitCapture()
+      setCaptureMode(false)
+    }
+  }, [store.reckoningDue, captureMode])
 
   const active = useMemo(
     () =>
@@ -60,11 +71,29 @@ export default function App() {
     )
   }
 
+  if (captureMode) {
+    return (
+      <QuickCapture
+        onAddTask={store.addTask}
+        onAddNote={store.quickAddNote}
+        onExit={() => {
+          desktopControls()?.exitCapture()
+          setCaptureMode(false)
+        }}
+      />
+    )
+  }
+
   return (
     // Any click unlocks audio, so a reminder later in the session can actually sound.
     <div className="app" onPointerDown={primeAudio}>
       <Window
         title="9days To-do"
+        onEnterCapture={() => {
+          const controls = desktopControls()
+          if (!controls) return
+          controls.enterCapture().then(() => setCaptureMode(true))
+        }}
         toolbar={
           <div className="menubar">
             <button aria-current={view === 'list'} onClick={() => setView('list')}>

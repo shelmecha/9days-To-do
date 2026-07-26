@@ -664,3 +664,86 @@ input[type='time'].field {
   white-space: nowrap;
   border: 0;
 }
+
+/* ---------- Quick Capture Widget ---------- */
+
+.capture {
+  height: 100%;
+  width: 100%;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+}
+
+.capture__bar {
+  background: var(--title);
+  color: var(--title-text);
+  font-weight: bold;
+  font-size: var(--fs-sm);
+  padding: 3px 3px 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.capture__bar .titlebar__btn {
+  -webkit-app-region: no-drag;
+}
+
+.capture__body {
+  padding: 8px 6px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.capture__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.capture__actions .btn {
+  width: 100%;
+  text-align: center;
+}
+
+.capture__input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.capture__input-wrapper .field {
+  flex: 1;
+  min-height: auto;
+  padding: 4px 6px;
+}
+
+.capture__input-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.capture__input-buttons .btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.capture__saved {
+  text-align: center;
+  padding: 12px 6px;
+  color: var(--text);
+  font-size: var(--fs-sm);
+}

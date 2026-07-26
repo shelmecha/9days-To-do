@@ -11,9 +11,14 @@ interface Props {
    * main window these are the real minimise/close controls; in a browser they're decorative.
    */
   chrome?: boolean
+  /**
+   * Called when a "Quick capture" button is clicked. Only rendered if provided.
+   * Never shown in the reckoning overlay or note editor (chrome={false} paths).
+   */
+  onEnterCapture?: () => void
 }
 
-export function Window({ title, children, toolbar, chrome = true }: Props) {
+export function Window({ title, children, toolbar, chrome = true, onEnterCapture }: Props) {
   const controls = desktopControls()
 
   return (
@@ -23,6 +28,16 @@ export function Window({ title, children, toolbar, chrome = true }: Props) {
         {chrome &&
           (controls ? (
             <span className="titlebar__buttons">
+              {onEnterCapture && (
+                <button
+                  className="titlebar__btn"
+                  onClick={onEnterCapture}
+                  aria-label="Quick capture"
+                  title="Quick capture"
+                >
+                  ▪
+                </button>
+              )}
               <button
                 className="titlebar__btn"
                 onClick={controls.minimize}

@@ -1,7 +1,12 @@
+export type CaptureSizeMode = 'idle' | 'input'
+
 /** Window controls exposed by electron/preload.cjs. Absent in a plain browser. */
 interface Win95Bridge {
   minimize: () => void
   close: () => void
+  enterCapture: () => Promise<void>
+  exitCapture: () => void
+  setCaptureSize: (mode: CaptureSizeMode) => void
 }
 
 declare global {

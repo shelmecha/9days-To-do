@@ -1,8 +1,9 @@
 // Electron shell for the 9days To-do web app.
 // CommonJS (.cjs) on purpose: package.json sets "type": "module", which Electron's main
 // process does not support.
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage } = require('electron')
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, nativeImage } = require('electron')
 const path = require('node:path')
+const { loadCapturePosition, saveCapturePosition } = require('./capturePosition.cjs')
 
 const isDev = !app.isPackaged
 
@@ -10,10 +11,17 @@ const isDev = !app.isPackaged
 const WIDTH = 300
 const HEIGHT = 500
 
+const CAPTURE_WIDTH = 150
+const CAPTURE_HEIGHTS = { idle: 100, input: 150 }
+const CAPTURE_MARGIN = 12
+
 let win = null
 let tray = null
 let quitting = false
 let announcedTray = false
+let captureActive = false
+let preCaptureBounds = null
+let moveDebounce = null
 
 function asset(file) {
   // Packaged: resources are next to the app dir. Dev: build/ at the repo root.
@@ -57,6 +65,17 @@ function createWindow() {
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
+  })
+}
+
+function setupCaptureTracking() {
+  win.on('moved', () => {
+    if (!captureActive) return
+    if (moveDebounce) clearTimeout(moveDebounce)
+    moveDebounce = setTimeout(() => {
+      const { x, y, width, height } = win.getBounds()
+      saveCapturePosition({ x, bottom: y + height })
+    }, 400)
   })
 }
 
@@ -127,10 +146,67 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     createWindow()
+    setupCaptureTracking()
     createTray()
 
     ipcMain.on('win:minimize', () => win?.minimize())
     ipcMain.on('win:close', () => hideWindow())
+
+    ipcMain.handle('capture:enter', async () => {
+      if (!win) return
+      captureActive = true
+      preCaptureBounds = win.getBounds()
+
+      let pos = loadCapturePosition()
+      if (pos) {
+        // Loaded position exists; clamp to current work area
+        const display = screen.getDisplayNearestPoint({ x: pos.x, y: 0 })
+        const workArea = display.workArea
+        const clampedX = Math.max(
+          workArea.x,
+          Math.min(pos.x, workArea.x + workArea.width - CAPTURE_WIDTH),
+        )
+        const clampedBottom = Math.max(
+          workArea.y + CAPTURE_HEIGHTS.idle,
+          Math.min(pos.bottom, workArea.y + workArea.height),
+        )
+        pos = { x: clampedX, bottom: clampedBottom }
+      } else {
+        // No saved position; default to bottom-left of primary work area
+        const workArea = screen.getPrimaryDisplay().workArea
+        pos = {
+          x: workArea.x + CAPTURE_MARGIN,
+          bottom: workArea.y + workArea.height - CAPTURE_MARGIN,
+        }
+      }
+
+      const height = CAPTURE_HEIGHTS.idle
+      win.setBounds({ x: pos.x, y: pos.bottom - height, width: CAPTURE_WIDTH, height })
+      win.setAlwaysOnTop(true)
+      win.setSkipTaskbar(true)
+    })
+
+    ipcMain.on('capture:resize', (_e, mode) => {
+      if (!win || !captureActive) return
+      const newHeight = CAPTURE_HEIGHTS[mode]
+      const bounds = win.getBounds()
+      // Anchor at bottom: y moves up, height changes
+      win.setSize(CAPTURE_WIDTH, newHeight, false)
+      win.setPosition(bounds.x, bounds.y + (bounds.height - newHeight), false)
+    })
+
+    ipcMain.on('capture:exit', () => {
+      if (!win) return
+      captureActive = false
+      if (moveDebounce) clearTimeout(moveDebounce)
+      win.setAlwaysOnTop(false)
+      win.setSkipTaskbar(false)
+      if (preCaptureBounds) {
+        win.setBounds(preCaptureBounds)
+      } else {
+        win.setBounds({ x: 0, y: 0, width: WIDTH, height: HEIGHT })
+      }
+    })
 
     app.on('activate', showWindow)
   })
