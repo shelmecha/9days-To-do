@@ -22,12 +22,38 @@
   --bad: #a80000;
   --worst: #7a0000;
 
-  --font: "MS Sans Serif", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  /* The bundled pixel face comes FIRST so metrics are identical on every machine — a real
+     installed MS Sans Serif would have different ones. Segoe UI is deliberately absent: it is
+     what every user was actually getting before the font was bundled (the old stack asked for
+     "MS Sans Serif", which no modern Windows has), and it is why the retro shell only half-landed.
+     Tahoma is the right last resort — Carter, designed for screen, and period-correct. */
+  --font: "Pixelated MS Sans Serif", Tahoma, Verdana, Geneva, sans-serif;
   --font-mono: "Courier New", Courier, monospace;
 
-  --fs-sm: 11px;
-  --fs-base: 12px;
-  --fs-lg: 14px;
+  /* ---- Type -----------------------------------------------------------------
+     The UI face is a pixel font drawn at 11px: crisp at 11 and exact integer
+     multiples, blurry at everything else. So the UI has ONE size, and hierarchy
+     is carried by weight, colour, case and bevel instead. That is also what the
+     real Win95 shell did — Explorer, Notepad and every system dialog set almost
+     everything in 8pt MS Sans Serif. */
+  --fs-base: 11px; /* ON-GRID (1×). Everything. */
+  --fs-2x: 22px; /* ON-GRID (2×). Exactly one element: the reckoning counter. */
+  --fs-mono: 13px; /* OFF-GRID on purpose — Courier New is an outline face, no pixel grid. */
+
+  /* Line box, pinned in px so row heights no longer depend on the font's internal metrics.
+     Even, so anything centred splits an even free-space and lands on a whole pixel. */
+  --lh: 14px;
+  --lh-2x: 26px;
+
+  /* Vertical rhythm. The stylesheet used to mix 5, 6 and 7px with no system behind it. */
+  --gap: 4px; /* between siblings */
+  --pad: 6px; /* container padding */
+
+  /* Secondary text. Replaces five ad-hoc greys (#222, #333, #444, --shadow) that had drifted
+     apart across the file. --text-muted stays readable on the #c0c0c0 face; --text-dim is for
+     genuinely inert text (empty states, counters). */
+  --text-muted: #333333;
+  --text-dim: var(--shadow);
 
   /* Classic 2px bevels: outset = raised control, inset = sunken field */
   --bevel-out: inset -1px -1px 0 0 var(--dk-shadow), inset 1px 1px 0 0 var(--face-light),

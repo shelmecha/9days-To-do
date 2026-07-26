@@ -1,0 +1,39 @@
+Fonts in this directory
+=======================
+
+  ms_sans_serif.woff2
+  ms_sans_serif_bold.woff2
+
+Pixel-accurate recreations of the Windows 95 UI font, drawn at a design size of 11px.
+
+Attribution (required by the licence)
+-------------------------------------
+
+The FontStruction "MS Sans Serif"
+(https://fontstruct.com/fontstructions/show/1384746) by "lou" is licensed
+under a Creative Commons Attribution Share Alike license
+(http://creativecommons.org/licenses/by-sa/3.0/).
+
+The FontStruction "MS Sans Serif Bold"
+(https://fontstruct.com/fontstructions/show/1384862) by "lou" is licensed
+under a Creative Commons Attribution Share Alike license
+(http://creativecommons.org/licenses/by-sa/3.0/).
+
+Obtained as the WOFF2 conversions distributed in the 98.css package
+(https://github.com/jdan/98.css), version 0.1.21. Note that 98.css's own MIT
+licence covers its stylesheet, NOT these fonts — the fonts carry the CC BY-SA
+licence above.
+
+Notes on the licence
+--------------------
+
+- ShareAlike (§4(b)) binds Adaptations. Bundling an unmodified font inside an
+  application makes a Collection, which the licence explicitly states "will not
+  be considered an Adaptation" — so it does not impose any licence on this app's
+  own source.
+- Conversion from TTF to WOFF2 is permitted under §3: the granted rights include
+  "the right to make such modifications as are technically necessary to exercise
+  the rights in other media and formats".
+- FONTSTRUCT-readme.txt is redistributed alongside the fonts because the FontStruct
+  download terms require it: "If you redistribute the font file in this archive, it
+  must be accompanied by all the other files from this archive, including this one."

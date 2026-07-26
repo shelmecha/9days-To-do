@@ -35,7 +35,7 @@ export function DoneView({ tasks, today, onRestore, onClearAll }: Props) {
             <span>Clear {shown.length}? No undo.</span>
             <span className="right">
               <button
-                className="btn"
+                className="btn btn--sm"
                 onClick={() => {
                   onClearAll()
                   setConfirming(false)
@@ -44,7 +44,7 @@ export function DoneView({ tasks, today, onRestore, onClearAll }: Props) {
               >
                 Yes
               </button>
-              <button className="btn" onClick={() => setConfirming(false)}>
+              <button className="btn btn--sm" onClick={() => setConfirming(false)}>
                 No
               </button>
             </span>
@@ -55,7 +55,7 @@ export function DoneView({ tasks, today, onRestore, onClearAll }: Props) {
               {shown.length} done
             </span>
             {shown.length > 0 && (
-              <button className="btn" onClick={() => setConfirming(true)}>
+              <button className="btn btn--sm" onClick={() => setConfirming(true)}>
                 Clear all
               </button>
             )}
@@ -68,7 +68,7 @@ export function DoneView({ tasks, today, onRestore, onClearAll }: Props) {
           <li className="empty">Nothing finished yet.</li>
         ) : (
           shown.map((t) => (
-            <li key={t.id} className="taskrow">
+            <li key={t.id} className="taskrow taskrow--done">
               {/* Ticking a task off is easy to do by accident — a stray click, or the
                   reminder dialog's "Mark done". Un-completing is the way back. */}
               <input
@@ -80,7 +80,7 @@ export function DoneView({ tasks, today, onRestore, onClearAll }: Props) {
                 title="Put this back on the list"
               />
               <div className="taskrow__main">
-                <span style={{ textDecoration: 'line-through' }}>{t.title}</span>
+                <span className="taskrow__title--static">{t.title}</span>
                 <div className="taskrow__meta">
                   <ShameBadge keepCount={t.keepCount} />
                   <span className="badge">purges in {Math.max(0, daysLeft(t, today))}d</span>

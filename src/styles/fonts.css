@@ -1,0 +1,40 @@
+/*
+ * Pixel-accurate MS Sans Serif recreation. See src/assets/fonts/LICENSE.txt for attribution
+ * (CC BY-SA 3.0, "lou" via FontStruct, obtained from the 98.css distribution).
+ *
+ * Named "Pixelated MS Sans Serif" — the 98.css convention — so it can never collide with a real
+ * MS Sans Serif on an older Windows install, whose metrics differ.
+ *
+ * DRAWN FOR 11px. unitsPerEm is 4096 on a ~372-unit pixel grid, so at 11px every ascent, descent
+ * and advance width lands on a whole pixel; at 12px they are all fractional. That is why the type
+ * scale in tokens.css has exactly one size. Do not set type at 12, 13 or 14px in this font — it
+ * resamples and reads blurrier than the Segoe UI it replaced.
+ *
+ * Referenced from src/assets/ rather than public/ on purpose: Vite fingerprints these into
+ * dist/assets/ next to the emitted CSS, so the URL resolves as a same-directory './' reference.
+ * A public/ font is referenced absolutely and 404s over file:// in the packaged exe — the build
+ * only warns, so the failure shows up as a silently unstyled window.
+ *
+ * A single src: descriptor per face. 98.css itself ships two (woff then woff2), where the second
+ * overrides the first and the woff is dead weight; Electron bundles its own Chromium, so woff2
+ * alone is enough.
+ */
+
+@font-face {
+  font-family: 'Pixelated MS Sans Serif';
+  src: url('../assets/fonts/ms_sans_serif.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  /* block, not swap: the font is local and loads in single-digit ms, so the "invisible text"
+     window is theoretical — whereas swap would paint a fallback and then reflow every task row
+     when the real face arrives, which is visible jank in a fixed-height frame. */
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Pixelated MS Sans Serif';
+  src: url('../assets/fonts/ms_sans_serif_bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}

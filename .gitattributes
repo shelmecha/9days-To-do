@@ -1,2 +1,12 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Fonts are binary. Auto-detection currently gets this right, but only because the files happen to
+# contain NUL bytes — say it explicitly so a checkout can never line-ending-mangle them into a
+# corrupt font that fails to load with no useful error.
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.ico   binary
+*.png   binary

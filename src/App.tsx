@@ -96,14 +96,16 @@ export default function App() {
         }}
         toolbar={
           <div className="menubar">
+            {/* Only the accelerator letter is underlined, the way a Win95 menu did it — the
+                whole-label underline this replaced read as a row of links. */}
             <button aria-current={view === 'list'} onClick={() => setView('list')}>
-              Today
+              <u>T</u>oday
             </button>
             <button aria-current={view === 'notes'} onClick={() => setView('notes')}>
-              Notes
+              <u>N</u>otes
             </button>
             <button aria-current={view === 'done'} onClick={() => setView('done')}>
-              Done
+              <u>D</u>one
             </button>
           </div>
         }
@@ -152,7 +154,7 @@ export default function App() {
             {allTags.length > 0 && (
               <div className="tagfilter">
                 <button
-                  className="btn"
+                  className="btn btn--sm"
                   aria-pressed={tagFilter === null}
                   onClick={() => setTagFilter(null)}
                 >
@@ -161,7 +163,7 @@ export default function App() {
                 {allTags.map((t) => (
                   <button
                     key={t}
-                    className="btn"
+                    className="btn btn--sm"
                     aria-pressed={tagFilter === t}
                     onClick={() => setTagFilter(tagFilter === t ? null : t)}
                   >

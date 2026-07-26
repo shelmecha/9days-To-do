@@ -37,7 +37,7 @@ export function NotesView({ notes, onAdd, onOpen, onTogglePin }: Props) {
           // Only useful once there's something to search through.
           disabled={notes.length === 0}
         />
-        <button className="btn" type="button" onClick={onAdd}>
+        <button className="btn btn--sm" type="button" onClick={onAdd}>
           New
         </button>
       </div>

@@ -147,6 +147,24 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
 
 - Win95 look is **hand-rolled CSS** in `src/styles/tokens.css` + `global.css` — no UI library. Classic `#c0c0c0`
   face, `#ffffff`/`#808080`/`#000000` bevels via `--bevel-out`/`--bevel-in`, inverted on `:active`.
+- **The UI face is a bundled pixel font, and the type scale exists to serve it.** `src/assets/fonts/` holds a
+  pixel-accurate MS Sans Serif recreation (CC BY-SA, "lou" via FontStruct, from 98.css — see its `LICENSE.txt`,
+  the attribution is a licence condition). It is **drawn for 11px**: crisp at 11 and exact integer multiples,
+  blurry at everything else. So there is exactly **one type size** (`--fs-base: 11px`), plus `--fs-2x: 22px` used
+  by a single element (the reckoning counter) and `--fs-mono: 13px` for the Notepad body, which is Courier — an
+  outline face with no pixel grid, so it is free of the constraint. **Don't add a 12px or 14px size.** Hierarchy
+  is carried by weight, colour, case and bevel instead, which is also how the real Win95 shell did it.
+  - `@font-face` lives in `src/styles/fonts.css` and must reference the font from **`src/assets/`, never
+    `public/`**. A `public/` font is referenced absolutely and 404s over `file://` in the packaged exe; the build
+    only warns. From `src/assets/` Vite fingerprints it into `dist/assets/` beside the emitted CSS, so the URL
+    becomes a same-directory `./` reference that cannot break.
+  - `--lh` (14px) is pinned in px so row heights no longer depend on the font's internal metrics. Keep every
+    vertical padding/margin/line-height **even**, so anything centred lands on a whole pixel. The one deliberate
+    exception is `.badge`, at the font's own natural 12px line box — a chip never wraps, and those 2px are what
+    keep a task row at 45px so eight still fit.
+  - On Windows Chromium `-webkit-font-smoothing` and `text-rendering` are **no-ops**. The only thing that
+    actually changes the raster is `app.commandLine.appendSwitch('disable-lcd-text')` in `electron/main.cjs`,
+    which removes ClearType's colour fringing. Don't delete it expecting the CSS to cover it.
 - **The retro theme never costs accessibility.** Real semantics, real keyboard support, visible focus (the dotted
   outline is both period-accurate and usable). Modals use `role="dialog"` + `aria-modal` and go through
   `useDialog`, which moves focus in **and restores it on close** — see Dialogs above for why the restore matters.
@@ -182,6 +200,16 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
   via `electron/preload.cjs` → `window.win95` (see `src/lib/desktop.ts`), and `.titlebar` carries
   `-webkit-app-region: drag` so the window can be moved. In a plain browser `window.win95` is absent and the
   buttons fall back to decorative.
+- **`resizable: false` silently clamps *programmatic* resizes too, not just the user's drag handles.** On Windows
+  Electron enforces it by pinning the window's min/max size, so `setSize`/`setBounds` become no-ops while
+  `setPosition` still applies. This shipped as a real bug in Quick Capture: the widget kept its expanded height on
+  Cancel *and* slid 50px down the screen on every open/close, walking itself under the taskbar. Any programmatic
+  resize must be wrapped `setResizable(true)` → `setBounds(...)` → `setResizable(false)`, and should be **one
+  atomic `setBounds`**, never `setSize` + `setPosition` (which also flashes an intermediate frame).
+- **The capture widget anchors from stored `captureX`/`captureBottom`, not from `win.getBounds()`.** Reading the
+  live bounds back and building the next position on top of them is what let the error compound into that
+  downward walk. Our own `setBounds` also fires `moved`, hence the `suppressMoved` guard — without it the anchor
+  overwrites itself.
 - **Closing hides to the tray, it does not quit** — reminders can't fire from a closed app. Quitting is only via
   the tray menu. `requestSingleInstanceLock` prevents a second copy double-chiming.
 - **The lock makes `npm run electron:dev` fail silently while the exe is running.** A packaged copy sitting in the

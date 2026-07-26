@@ -33,7 +33,7 @@ export function ReminderDialog({ task, onDone, onDismiss }: Props) {
               <h2 id="rem-heading" className="reckoning__title">
                 {task.title}
               </h2>
-              <p style={{ margin: 0 }}>Scheduled for {task.remindAt}. It's time.</p>
+              <p className="dialog__text">Scheduled for {task.remindAt}. It's time.</p>
               {task.notes && <p className="reckoning__notes">{task.notes}</p>}
             </div>
           </div>

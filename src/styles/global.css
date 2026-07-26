@@ -1,3 +1,4 @@
+@import './fonts.css';
 @import './tokens.css';
 
 /*
@@ -24,7 +25,16 @@ body {
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-base);
+  line-height: var(--lh);
   overflow: hidden; /* the frame is fixed; the body must never scroll */
+  /* Never let the browser fake a bold: synthetic bold smears an 11px bitmap face horizontally
+     and perturbs its advance widths. A real bold face is bundled, so there is nothing to fake. */
+  font-synthesis: none;
+  font-kerning: none; /* keep advance widths integral */
+  font-variant-ligatures: none;
+  /* Kept for macOS/dev browsers. On Windows Chromium — the only engine the packaged app runs —
+     this is a no-op; ClearType is actually disabled by the disable-lcd-text switch in
+     electron/main.cjs. Don't add text-rendering here expecting an effect; it has none. */
   -webkit-font-smoothing: none;
 }
 
@@ -77,7 +87,8 @@ body {
   background: var(--title);
   color: var(--title-text);
   font-weight: bold;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
   padding: 3px 3px 3px 6px;
   display: flex;
   align-items: center;
@@ -102,7 +113,7 @@ body {
   box-shadow: var(--bevel-out);
   border: 0;
   font-family: var(--font);
-  font-size: 9px;
+  font-size: var(--fs-base);
   line-height: 1;
   display: grid;
   place-items: center;
@@ -111,7 +122,7 @@ body {
 }
 
 .win__body {
-  padding: 6px 6px 7px;
+  padding: var(--pad);
   /* The frame is a fixed height, so the task list scrolls internally (flex: 1) and body
      copy is kept short. This stays scrollable as a safety net for long dialog content. */
   overflow-y: auto;
@@ -136,12 +147,24 @@ body {
   background: transparent;
   border: 0;
   font-family: var(--font);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
   padding: 3px 6px;
   color: var(--text);
-  text-decoration: underline;
-  text-underline-offset: 2px;
   white-space: nowrap;
+}
+
+/* Win95 underlined the ACCELERATOR LETTER, not the whole menu item — the label markup carries
+   a <u> around its first character. The blanket underline that used to live on the button read
+   as a row of links. */
+.menubar button u {
+  text-underline-offset: 2px;
+}
+
+/* Menu items highlighted on hover in Win95, and there was no hover state here at all. */
+.menubar button:hover {
+  background: var(--title);
+  color: var(--title-text);
 }
 
 .menubar button[aria-current='true'] {
@@ -157,11 +180,23 @@ body {
   border: 0;
   font-family: var(--font);
   font-size: var(--fs-base);
+  /* 4 + 18 + 4 = the 26px min-height exactly. Without an explicit line-height the content box
+     splits an odd free-space and the label lands on a half pixel, which a pixel font shows. */
+  line-height: 18px;
   color: var(--text);
   padding: 4px 10px;
   min-width: 54px;
   min-height: 26px;
   cursor: default;
+}
+
+/* The compact button used by the tag filter and the Done list header. These were two
+   byte-identical rule bodies before. 2 + 14 + 2 = 18px tall. */
+.btn--sm {
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 7px;
+  line-height: var(--lh);
 }
 
 .btn:active:not(:disabled) {
@@ -177,7 +212,8 @@ body {
 
 .btn--lg {
   padding: 8px 12px;
-  font-size: var(--fs-base);
+  /* 8 + 22 + 8 = the 38px --touch target exactly. */
+  line-height: 22px;
   min-height: var(--touch);
 }
 
@@ -191,6 +227,7 @@ body {
   border: 0;
   font-family: var(--font);
   font-size: var(--fs-base);
+  line-height: 18px; /* 4 + 18 + 4 = 26px min-height */
   padding: 4px 5px;
   width: 100%;
   min-height: 26px;
@@ -200,7 +237,6 @@ body {
 textarea.field {
   resize: none;
   min-height: 56px;
-  font-family: var(--font);
 }
 
 input[type='time'].field {
@@ -215,10 +251,18 @@ input[type='time'].field {
 
 /* ---------- Quick add ---------- */
 
+/* A bare horizontal group. Task properties wants this without the quick-add's bottom margin,
+   which was stacking on top of .stack's own gap and pushing that one field group out of line. */
+.row {
+  display: flex;
+  gap: var(--gap);
+  flex: 0 0 auto;
+}
+
 .quickadd {
   display: flex;
-  gap: 4px;
-  margin-bottom: 5px;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
   flex: 0 0 auto;
 }
 
@@ -290,18 +334,27 @@ input[type='time'].field {
   flex-wrap: wrap;
   gap: 3px;
   align-items: center;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
-.taskrow--done .taskrow__title {
-  color: var(--shadow);
+/* Covers both the interactive title button (Today) and the static span used in Done, which
+   previously got the line-through from an inline style but missed the greying entirely — so a
+   completed row looked different depending on which screen you saw it on. */
+.taskrow--done .taskrow__title,
+.taskrow--done .taskrow__title--static {
+  color: var(--text-dim);
   text-decoration: line-through;
 }
 
+.taskrow__title--static {
+  display: block;
+  word-break: break-word;
+}
+
 .empty {
-  padding: 18px 12px;
+  padding: 16px 12px;
   text-align: center;
-  color: var(--shadow);
+  color: var(--text-dim);
 }
 
 /* ---------- Notebook ----------
@@ -368,15 +421,17 @@ input[type='time'].field {
 
 .notecard__date {
   grid-area: date;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  /* Deliberately NOT --text-muted: this is a warm grey tuned for the #ffffe1 note card, where
+     the neutral grey used on the #c0c0c0 face reads cold and dirty. */
   color: #6b6b4a;
   white-space: nowrap;
 }
 
 .notecard__preview {
   grid-area: preview;
-  font-size: var(--fs-sm);
-  color: #444;
+  font-size: var(--fs-base);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -388,7 +443,7 @@ input[type='time'].field {
   background: none;
   border: 0;
   border-left: 1px solid rgba(0, 0, 0, 0.12);
-  font-size: 11px;
+  font-size: var(--fs-base);
   /* Unpinned reads as an empty slot; pinned lights up. */
   filter: grayscale(1);
   opacity: 0.35;
@@ -409,22 +464,23 @@ input[type='time'].field {
 .noteeditor {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gap);
   flex: 1 1 auto;
   min-height: 0;
 }
 
 .noteeditor__title {
   font-weight: bold;
-  font-size: var(--fs-lg);
 }
 
 .noteeditor__body {
   /* The editor is the one place worth breaking the UI font: prose wants a text face, and a
-     monospace body is exactly what Notepad looked like. */
+     monospace body is exactly what Notepad looked like. Courier New is an outline face with no
+     pixel grid, so it is also the one place a non-11px size costs nothing — and keeps the app's
+     only genuinely prose surface readable while the chrome collapses to 11px. */
   font-family: var(--font-mono);
-  font-size: var(--fs-base);
-  line-height: 1.45;
+  font-size: var(--fs-mono);
+  line-height: 18px;
   background: var(--note);
   flex: 1 1 auto;
   min-height: 0;
@@ -435,19 +491,24 @@ input[type='time'].field {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: var(--pad);
   flex: 0 0 auto;
 }
 
 .noteeditor__count {
-  font-size: var(--fs-sm);
-  color: var(--shadow);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-dim);
 }
 
 /* ---------- Badges ---------- */
 
 .badge {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  /* The font's OWN line box is 11.996px, so 12 is its natural, leading-free height — right for a
+     one-word chip that never wraps, and it is what keeps a task row at 45px so eight of them
+     still fit the frame. --lh's extra 2px of leading is for text that can wrap; this can't. */
+  line-height: 12px;
   padding: 1px 5px;
   border: 1px solid var(--shadow);
   background: var(--face);
@@ -456,8 +517,8 @@ input[type='time'].field {
 }
 
 .badge--quiet {
-  border-color: var(--shadow);
-  color: #333;
+  /* .badge already sets this border-color; only the text colour differs. */
+  color: var(--text-muted);
 }
 
 .badge--warn {
@@ -477,12 +538,15 @@ input[type='time'].field {
   border-color: var(--dk-shadow);
   color: #fff;
   font-weight: bold;
+  /* The loudest single moment in the app (9+ keeps). CSS-only, so shame.ts and its tests are
+     untouched — the label string itself is unchanged. */
+  text-transform: uppercase;
 }
 
 .badge--tag {
   background: var(--face);
   border-style: dotted;
-  color: #222;
+  color: var(--text-muted);
 }
 
 .badge--remind {
@@ -498,19 +562,12 @@ input[type='time'].field {
   flex-wrap: wrap;
   gap: 3px;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: var(--gap);
   flex: 0 0 auto;
 }
 
 .tagfilter button[aria-pressed='true'] {
   box-shadow: var(--bevel-in);
-}
-
-.tagfilter .btn {
-  min-width: 0;
-  min-height: 0;
-  padding: 3px 7px;
-  font-size: var(--fs-sm);
 }
 
 /* ---------- Overlays (reckoning, reminder, task detail) ---------- */
@@ -540,27 +597,44 @@ input[type='time'].field {
 }
 
 .reckoning__progress {
-  font-size: var(--fs-sm);
-  color: #333;
-  margin: 0 0 6px;
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-muted);
+  margin: 0 0 var(--pad);
+  display: flex;
+  align-items: baseline;
+  gap: var(--pad);
+}
+
+/* The one 2× element in the app. The reckoning is a gauntlet and the count is what you feel,
+   so the number is the big thing rather than the task title — and unlike a title, "2/7" has a
+   bounded length that cannot wrap or overflow the fixed frame. */
+.reckoning__count {
+  font-size: var(--fs-2x);
+  line-height: var(--lh-2x);
+  font-weight: bold;
+  color: var(--text);
 }
 
 .reckoning__title {
-  font-size: var(--fs-lg);
-  margin: 0 0 5px;
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  font-weight: bold;
+  margin: 0 0 var(--gap);
   word-break: break-word;
 }
 
 .reckoning__notes {
   white-space: pre-wrap;
-  margin: 6px 0 0;
-  color: #222;
-  font-size: var(--fs-sm);
+  margin: var(--pad) 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
 }
 
 .reckoning__actions {
   display: flex;
-  gap: 6px;
+  gap: var(--pad);
   margin-top: 10px;
 }
 
@@ -571,8 +645,9 @@ input[type='time'].field {
 
 .reckoning__hint {
   margin: 8px 0 0;
-  font-size: var(--fs-sm);
-  color: var(--shadow);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-dim);
 }
 
 .dialog__row {
@@ -581,27 +656,33 @@ input[type='time'].field {
   align-items: flex-start;
 }
 
+/* Emoji, so not pixel-grid constrained — 22px is optical alignment with the 2× step. */
 .dialog__icon {
-  font-size: 24px;
+  font-size: var(--fs-2x);
   line-height: 1;
   flex: 0 0 auto;
+}
+
+.dialog__text {
+  margin: 0;
 }
 
 /* ---------- Misc ---------- */
 
 .stack > * + * {
-  margin-top: 7px;
+  margin-top: var(--pad);
 }
 
 .statusbar {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
-  margin-top: 5px;
+  gap: var(--pad);
+  margin-top: var(--gap);
   padding: 3px 5px;
   box-shadow: var(--bevel-in);
-  font-size: var(--fs-sm);
-  color: #333;
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-muted);
   flex: 0 0 auto;
 }
 
@@ -612,26 +693,28 @@ input[type='time'].field {
 }
 
 .notice {
-  font-size: var(--fs-sm);
-  color: #333;
-  margin: 5px 0 0;
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-muted);
+  margin: var(--gap) 0 0;
   flex: 0 0 auto;
 }
 
 .label {
   display: block;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .right {
   display: flex;
-  gap: 6px;
+  gap: var(--pad);
   justify-content: flex-end;
 }
 
 .right .btn {
   min-width: 0;
-  padding: 4px 9px;
+  /* Matches .quickadd's compact padding — three of these have to fit one 300px row. */
+  padding: 4px 7px;
 }
 
 /* Header strip above a list: a label on the left, one action on the right. */
@@ -639,18 +722,12 @@ input[type='time'].field {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 5px;
+  gap: var(--pad);
+  margin-bottom: var(--gap);
   flex: 0 0 auto;
-  font-size: var(--fs-sm);
-  color: #333;
-}
-
-.listhead .btn {
-  min-width: 0;
-  min-height: 0;
-  padding: 3px 7px;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text-muted);
 }
 
 .sr-only {
@@ -681,7 +758,8 @@ input[type='time'].field {
   background: var(--title);
   color: var(--title-text);
   font-weight: bold;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
   padding: 3px 3px 3px 6px;
   display: flex;
   align-items: center;
@@ -744,6 +822,7 @@ input[type='time'].field {
 .capture__saved {
   text-align: center;
   padding: 12px 6px;
-  color: var(--text);
-  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
 }

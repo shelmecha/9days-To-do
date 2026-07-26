@@ -102,7 +102,9 @@ export function TaskDetail({ task, onSave, onDelete, onClose }: Props) {
             <label className="label" htmlFor="td-remind">
               Remind me today at
             </label>
-            <div className="quickadd">
+            {/* .row, not .quickadd: this only wants the flex layout, and .quickadd's bottom
+                margin stacked on .stack's gap, pushing this one group out of line. */}
+            <div className="row">
               <input
                 id="td-remind"
                 className="field"

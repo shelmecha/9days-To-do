@@ -70,9 +70,7 @@ export function QuickCapture({ onAddTask, onAddNote, onExit }: Props) {
   return (
     <div className="capture">
       <div className="capture__bar">
-        <span style={{ flex: 1 }} className="sr-only">
-          Quick capture
-        </span>
+        <span className="sr-only">Quick capture</span>
         <button
           className="titlebar__btn"
           onClick={onExit}

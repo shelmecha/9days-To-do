@@ -7,6 +7,20 @@ const { loadCapturePosition, saveCapturePosition } = require('./capturePosition.
 
 const isDev = !app.isPackaged
 
+/**
+ * Turn off subpixel (ClearType) antialiasing.
+ *
+ * The UI is set in a pixel-traced MS Sans Serif recreation, and ClearType renders its edges with
+ * red/purple colour fringing — the single most conspicuously un-1995 artifact on the screen, since
+ * Win95 had no font smoothing at all. Measured: this takes ~1400 subpixel-coloured pixels to 0 over
+ * a sample of the task list, converting them to neutral grey.
+ *
+ * Must be set before app.whenReady(). Note that the CSS properties usually recommended for this
+ * (-webkit-font-smoothing, text-rendering) are no-ops on Windows Chromium — this switch is the only
+ * thing that actually changes the raster.
+ */
+app.commandLine.appendSwitch('disable-lcd-text')
+
 /** Fixed vertical frame — must match --app-w / --app-h in src/styles/tokens.css. */
 const WIDTH = 300
 const HEIGHT = 500
@@ -22,6 +36,18 @@ let announcedTray = false
 let captureActive = false
 let preCaptureBounds = null
 let moveDebounce = null
+/**
+ * The widget's anchor while in capture mode: its left edge and its BOTTOM edge.
+ *
+ * Every resize is computed from these stored values rather than from `win.getBounds()`. That is
+ * deliberate: if a resize is ever clamped or partially applied, reading the result back and
+ * building the next position on top of it lets the error compound, which is exactly how the
+ * window used to walk down the screen on every open/cancel cycle.
+ */
+let captureX = null
+let captureBottom = null
+/** Our own setBounds fires 'moved'; without this the anchor would overwrite itself. */
+let suppressMoved = false
 
 function asset(file) {
   // Packaged: resources are next to the app dir. Dev: build/ at the repo root.
@@ -68,13 +94,47 @@ function createWindow() {
   })
 }
 
+/**
+ * Move the capture widget to `height`, keeping its bottom-left corner pinned.
+ *
+ * Two things here are load-bearing:
+ *
+ * 1. `setResizable`. The window is created `resizable: false`, and on Windows Electron enforces
+ *    that by pinning the min/max size — so `setSize`/`setBounds` are silently CLAMPED. The old
+ *    code paired a blocked resize with a position change that still applied, which is why the
+ *    widget kept its expanded height on Cancel *and* slid 50px down the screen each time.
+ * 2. A single atomic `setBounds`, not `setSize` + `setPosition` — no intermediate frame where the
+ *    window is the new size at the old position.
+ */
+function applyCaptureBounds(height) {
+  if (!win || captureX === null || captureBottom === null) return
+
+  const display = screen.getDisplayNearestPoint({ x: captureX, y: captureBottom - height })
+  const wa = display.workArea
+  const x = Math.max(wa.x, Math.min(captureX, wa.x + wa.width - CAPTURE_WIDTH))
+  // Never let the bottom edge fall past the work area — that is what puts it under the taskbar.
+  const bottom = Math.max(wa.y + height, Math.min(captureBottom, wa.y + wa.height))
+
+  captureX = x
+  captureBottom = bottom
+
+  suppressMoved = true
+  win.setResizable(true)
+  win.setBounds({ x, y: bottom - height, width: CAPTURE_WIDTH, height })
+  win.setResizable(false)
+  suppressMoved = false
+}
+
 function setupCaptureTracking() {
   win.on('moved', () => {
-    if (!captureActive) return
+    // Only a genuine user drag should move the anchor.
+    if (!captureActive || suppressMoved) return
+    const { x, y, height } = win.getBounds()
+    captureX = x
+    captureBottom = y + height
     if (moveDebounce) clearTimeout(moveDebounce)
     moveDebounce = setTimeout(() => {
-      const { x, y, width, height } = win.getBounds()
-      saveCapturePosition({ x, bottom: y + height })
+      saveCapturePosition({ x: captureX, bottom: captureBottom })
     }, 400)
   })
 }
@@ -157,55 +217,45 @@ if (!app.requestSingleInstanceLock()) {
       captureActive = true
       preCaptureBounds = win.getBounds()
 
-      let pos = loadCapturePosition()
-      if (pos) {
-        // Loaded position exists; clamp to current work area
-        const display = screen.getDisplayNearestPoint({ x: pos.x, y: 0 })
-        const workArea = display.workArea
-        const clampedX = Math.max(
-          workArea.x,
-          Math.min(pos.x, workArea.x + workArea.width - CAPTURE_WIDTH),
-        )
-        const clampedBottom = Math.max(
-          workArea.y + CAPTURE_HEIGHTS.idle,
-          Math.min(pos.bottom, workArea.y + workArea.height),
-        )
-        pos = { x: clampedX, bottom: clampedBottom }
+      const saved = loadCapturePosition()
+      if (saved) {
+        captureX = saved.x
+        captureBottom = saved.bottom
       } else {
-        // No saved position; default to bottom-left of primary work area
-        const workArea = screen.getPrimaryDisplay().workArea
-        pos = {
-          x: workArea.x + CAPTURE_MARGIN,
-          bottom: workArea.y + workArea.height - CAPTURE_MARGIN,
-        }
+        // Bottom-left of the primary work area — above the taskbar, not behind it.
+        const wa = screen.getPrimaryDisplay().workArea
+        captureX = wa.x + CAPTURE_MARGIN
+        captureBottom = wa.y + wa.height - CAPTURE_MARGIN
       }
 
-      const height = CAPTURE_HEIGHTS.idle
-      win.setBounds({ x: pos.x, y: pos.bottom - height, width: CAPTURE_WIDTH, height })
-      win.setAlwaysOnTop(true)
+      // applyCaptureBounds clamps to the current work area, so a position saved on a monitor
+      // that has since been unplugged or rescaled still lands somewhere reachable.
+      applyCaptureBounds(CAPTURE_HEIGHTS.idle)
+      // 'screen-saver' is the level that floats above the Windows taskbar.
+      win.setAlwaysOnTop(true, 'screen-saver')
       win.setSkipTaskbar(true)
     })
 
     ipcMain.on('capture:resize', (_e, mode) => {
       if (!win || !captureActive) return
-      const newHeight = CAPTURE_HEIGHTS[mode]
-      const bounds = win.getBounds()
-      // Anchor at bottom: y moves up, height changes
-      win.setSize(CAPTURE_WIDTH, newHeight, false)
-      win.setPosition(bounds.x, bounds.y + (bounds.height - newHeight), false)
+      applyCaptureBounds(CAPTURE_HEIGHTS[mode] ?? CAPTURE_HEIGHTS.idle)
     })
 
     ipcMain.on('capture:exit', () => {
       if (!win) return
       captureActive = false
+      captureX = null
+      captureBottom = null
       if (moveDebounce) clearTimeout(moveDebounce)
       win.setAlwaysOnTop(false)
       win.setSkipTaskbar(false)
-      if (preCaptureBounds) {
-        win.setBounds(preCaptureBounds)
-      } else {
-        win.setBounds({ x: 0, y: 0, width: WIDTH, height: HEIGHT })
-      }
+      // Same setResizable dance: the restore is a programmatic resize too, and would otherwise
+      // be clamped to the capture widget's dimensions.
+      suppressMoved = true
+      win.setResizable(true)
+      win.setBounds(preCaptureBounds ?? { x: 0, y: 0, width: WIDTH, height: HEIGHT })
+      win.setResizable(false)
+      suppressMoved = false
     })
 
     app.on('activate', showWindow)

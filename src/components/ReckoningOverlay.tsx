@@ -46,7 +46,7 @@ export function ReckoningOverlay({ queue, onKeep, onDrop, onFinish }: Props) {
                 <h2 id="reckoning-heading" tabIndex={-1} className="reckoning__title">
                   {total === 0 ? 'Nothing to reckon' : 'Reckoning complete'}
                 </h2>
-                <p style={{ margin: 0 }}>
+                <p className="dialog__text">
                   {total === 0
                     ? 'A clean slate. Nothing carried over.'
                     : `You reviewed ${total} ${total === 1 ? 'task' : 'tasks'}.`}
@@ -61,8 +61,13 @@ export function ReckoningOverlay({ queue, onKeep, onDrop, onFinish }: Props) {
           </div>
         ) : (
           <div className="stack">
+            {/* The count is the big element, not the task title: a title is unbounded and would
+                overflow the fixed frame, whereas "2/7" cannot wrap. */}
             <p className="reckoning__progress">
-              Task {index + 1} of {total} — decide before continuing
+              <span className="reckoning__count">
+                {index + 1}/{total}
+              </span>
+              <span>decide before continuing</span>
             </p>
             <div className="panel">
               <h2 id="reckoning-heading" tabIndex={-1} className="reckoning__title">
@@ -76,7 +81,7 @@ export function ReckoningOverlay({ queue, onKeep, onDrop, onFinish }: Props) {
                 ))}
               </div>
             </div>
-            <p style={{ margin: 0 }}>
+            <p className="dialog__text">
               {task.keepCount >= 6
                 ? "You've carried this for a while. Is it real work, or is it a wish?"
                 : 'Still worth your time tomorrow?'}
