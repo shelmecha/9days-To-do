@@ -216,6 +216,14 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
   drift as the `setSize` bug, arriving by a different route. The anchor moves only on a real drag or on
   `capture:enter`, which is also where the once-per-session "is this saved position still on a real monitor"
   sanitise lives.
+- **Only the capture widget's gripper is `-webkit-app-region: drag`, and it must stay that way.** The tidier
+  arrangement — drag on the whole widget, `no-drag` on each control — was tried and measured wrong: Chromium
+  derives the OS hit-test regions from the rendered layout, and across the idle↔input resize those regions do
+  not keep up. Stray `HTCAPTION` patches landed *inside the text field* (so clicking there dragged the window
+  instead of focusing the input) while the strip row lost its drag region entirely. Confining drag to one small
+  fixed element means a stale region can never swallow a click on a control. Verify with `WM_NCHITTEST`
+  (`SendMessage(hwnd, 0x0084, 0, MAKELPARAM(x, y))`): every button and the field must return `HTCLIENT` (1) and
+  only the gripper `HTCAPTION` (2). Note the region lags one paint behind a resize and then corrects itself.
 - **Windows enforces a minimum window height of 39px (`SM_CYMINTRACK`) on any *resizable* window** — and since
   every capture resize has to flip `resizable` on, that floor applies to the widget. Measured: a requested 28
   comes back as 39, and `setMinimumSize(1, 1)` does **not** lift it. There is no floor on width (80px is fine).

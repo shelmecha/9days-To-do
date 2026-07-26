@@ -758,7 +758,7 @@ input[type='time'].field {
  * 40 is the smallest even number above the floor. The strip is centred in the leftover space
  * rather than padded, so the same 26px row serves both states unchanged.
  *
- * There is no title bar: the widget itself is the drag surface and every control opts out.
+ * There is no title bar. ONLY the gripper is draggable — see the note on .capture__grip.
  */
 
 .capture {
@@ -773,20 +773,15 @@ input[type='time'].field {
   gap: var(--gap);
   overflow: hidden;
   user-select: none;
-  -webkit-app-region: drag;
 }
 
-/* Not optional. An <input> inside a drag region cannot be clicked, focused or selected at all —
-   Chromium hands the mousedown to the window manager instead. */
-.capture button,
 .capture .field {
-  -webkit-app-region: no-drag;
+  user-select: text;
 }
 
 /* Fixed 26px (4 + 18 + 4); never let it stretch to fill. */
 .capture .field {
   flex: 0 0 26px;
-  user-select: text;
 }
 
 .capture__strip {
@@ -798,13 +793,26 @@ input[type='time'].field {
 }
 
 /* Win95 rebar gripper: two raised 1px ridges, lit from the top left. Pure CSS, no image — with
-   the title bar gone, this carries the entire "you can move me" affordance. */
+   the title bar gone, this carries the entire "you can move me" affordance.
+ *
+ * It is also the ONLY -webkit-app-region: drag surface, which is deliberate and load-bearing.
+ * Making the whole widget draggable and opting controls out with no-drag looks tidier and was
+ * tried first — but Chromium derives the OS hit-test regions from the rendered layout, and across
+ * the idle<->input resize those regions do not reliably keep up. Measured on the packaged build:
+ * stray HTCAPTION patches sat inside the text field (so clicks there would drag the window
+ * instead of focusing it) while the strip row lost its drag region entirely. Confining drag to
+ * one small fixed element means a stale region can never swallow a click on a control; the worst
+ * case is the grip being briefly harder to grab.
+ *
+ * 2px of padding either side of the 6px ridges makes a 10px hit target without widening the art.
+ */
 .capture__grip {
-  flex: 0 0 6px;
+  flex: 0 0 10px;
   align-self: stretch;
   margin-right: 2px;
-  padding: 3px 0; /* even inset: a 20px ridge in the 26px row */
-  background-origin: padding-box;
+  padding: 3px 2px; /* even vertical inset: a 20px ridge in the 26px row */
+  -webkit-app-region: drag;
+  background-origin: content-box;
   background-clip: content-box;
   background-image: linear-gradient(
     90deg,
