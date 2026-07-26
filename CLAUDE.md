@@ -210,6 +210,16 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
   live bounds back and building the next position on top of them is what let the error compound into that
   downward walk. Our own `setBounds` also fires `moved`, hence the `suppressMoved` guard — without it the anchor
   overwrites itself.
+- **`capture:enter` must be a no-op when `captureActive` is already true, and `capture:exit` must take only the
+  *position* from `preCaptureBounds`.** These are two halves of one shipped bug. `enterCapture()` is an async
+  `invoke`, so a double-click on the ▪ title-bar icon fires it twice before React unmounts the button — and the
+  second call stored the *widget's* 112×40 bounds as `preCaptureBounds`, losing the full window size. "Restore
+  full window" (`□`) then restored the window to 112×40, and it could never be grown again for the rest of the
+  session. It presented as "the release exe won't maximise but `win-unpacked` is fine", which is misleading: the
+  code is identical, the portable build merely has a slower IPC round-trip and so loses the race far more often.
+  The size now comes from the `WIDTH`/`HEIGHT` constants — the app has exactly one size, so no stale or clobbered
+  bounds can bring the window back small. `App.tsx` also guards the second `enterCapture()` with a ref. Keep both
+  guards: either alone fixes the reported symptom, but only the constants make a wrong *size* unrepresentable.
 - **`applyCaptureBounds` must NOT write its clamped result back to the anchor.** Both clamp bounds depend on the
   current size, and the widget has two sizes. Storing the clamp would let the wide `input` state drag the anchor
   leftwards every time it opened near the right edge of the screen and never give it back — the same compounding
@@ -299,3 +309,13 @@ For the packaged exe, both of these cost real time to learn the hard way:
   enumerate top-level windows with `EnumWindows` + `IsWindowVisible`, filtered to the app's PIDs and to windows
   larger than ~100×100 so popups are excluded. Also park the cursor away from the window before capturing.
 - Relatedly, **give the portable exe 20+ seconds** before concluding a launch failed — see the Electron section.
+- **To actually *drive* the packaged exe, launch it with `--remote-debugging-port=9222` and talk CDP to it.** The
+  portable stub forwards the argument. Read the page target from `http://127.0.0.1:9222/json/list`, open its
+  `webSocketDebuggerUrl`, and send `Runtime.evaluate` with `userGesture: true` to click real DOM nodes by
+  `aria-label`. Node 22 has a global `WebSocket`, so this needs no dependency. Pair each step with an
+  `EnumWindows` + `GetWindowRect` measurement to assert the *OS* window size, which is the thing under test for
+  any resize bug. This is what reproduced and then verified the `capture:enter` re-entry bug above — neither
+  `npm test` nor the dev-server harness can see it, because it only loses its race in the packaged build.
+- **Do not try to drive it with synthetic mouse input.** Measured: `mouse_event` clicks at coordinates that
+  `WM_NCHITTEST` confirmed were `HTCLIENT` still never reached the Chromium renderer, even after
+  `SetForegroundWindow`, and one stray click dragged the window instead of pressing the button. Use CDP.

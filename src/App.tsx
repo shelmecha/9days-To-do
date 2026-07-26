@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { View } from './types'
 import { useStore } from './hooks/useStore'
 import { useReminders } from './hooks/useReminders'
@@ -22,6 +22,14 @@ export default function App() {
   const [openNoteId, setOpenNoteId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [captureMode, setCaptureMode] = useState(false)
+  /**
+   * True from the click until the widget has actually mounted.
+   *
+   * enterCapture() is async, so a double-click lands both clicks before `captureMode` re-renders
+   * and unmounts the button — firing entry twice. The main process guards against that too, but
+   * not sending the second call is the cheaper half of the fix.
+   */
+  const enteringCapture = useRef(false)
 
   // Reminders stay silent during a reckoning or capture mode — one blocking thing at a time.
   const reminders = useReminders(
@@ -91,8 +99,12 @@ export default function App() {
         title="9days To-do"
         onEnterCapture={() => {
           const controls = desktopControls()
-          if (!controls) return
-          controls.enterCapture().then(() => setCaptureMode(true))
+          if (!controls || enteringCapture.current) return
+          enteringCapture.current = true
+          controls.enterCapture().then(() => {
+            setCaptureMode(true)
+            enteringCapture.current = false
+          })
         }}
         toolbar={
           <div className="menubar">

@@ -232,7 +232,12 @@ if (!app.requestSingleInstanceLock()) {
     ipcMain.on('win:close', () => hideWindow())
 
     ipcMain.handle('capture:enter', async () => {
-      if (!win) return
+      // Re-entry must be a no-op. `enterCapture()` is async, so a double-click on the title-bar
+      // icon fires it twice before React unmounts the button — and the second call would store the
+      // WIDGET's bounds as preCaptureBounds, losing the full window size for the rest of the
+      // session. Exit then "restored" to 112×40 and the window could never be grown again.
+      // Reproduced on the portable build, where the slower IPC round-trip widens the race.
+      if (!win || captureActive) return
       captureActive = true
       preCaptureBounds = win.getBounds()
 
@@ -280,9 +285,18 @@ if (!app.requestSingleInstanceLock()) {
       win.setSkipTaskbar(false)
       // Same setResizable dance: the restore is a programmatic resize too, and would otherwise
       // be clamped to the capture widget's dimensions.
+      //
+      // Only the POSITION comes from preCaptureBounds. The app has exactly one size, so taking
+      // the size from the constants means no stale or clobbered bounds can ever bring the window
+      // back at widget size — the failure that made the window impossible to grow again.
       suppressMoved = true
       win.setResizable(true)
-      win.setBounds(preCaptureBounds ?? { x: 0, y: 0, width: WIDTH, height: HEIGHT })
+      win.setBounds({
+        x: preCaptureBounds?.x ?? 0,
+        y: preCaptureBounds?.y ?? 0,
+        width: WIDTH,
+        height: HEIGHT,
+      })
       win.setResizable(false)
       suppressMoved = false
     })
