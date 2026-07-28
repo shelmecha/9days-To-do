@@ -1,0 +1,309 @@
+@import './fonts.css';
+@import './tokens.css';
+
+/*
+ * The demo site's landing page.
+ *
+ * Deliberately does NOT import global.css: that file pins html/body to 100% height with
+ * `overflow: hidden`, because the app is a fixed 300x500 frame that must never scroll. A page
+ * that scrolls needs the opposite. Only the tokens and the bundled font are shared, which is
+ * what keeps the two looking like one product.
+ *
+ * The type scale is the app's constraint, honoured: the pixel face is drawn for 11px and is only
+ * crisp at exact integer multiples, so this page uses 11 / 22 / 33 / 44 and nothing between.
+ * There is no 12px, 16px or 18px here for the same reason there is none in the app.
+ */
+
+:root {
+  --fs-3x: 33px;
+  --fs-4x: 44px;
+  --lh-3x: 40px;
+  --lh-4x: 52px;
+  /* Wide enough for ~80 characters at 11px, which is the readable maximum. */
+  --measure: 660px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* The one place a non-pixel-grid unit is fine: this is scroll behaviour, not type. */
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--desktop);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  font-synthesis: none;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: none;
+  padding: 24px 16px 48px;
+}
+
+:focus-visible {
+  outline: 1px dotted var(--hilite);
+  outline-offset: 2px;
+}
+
+.page {
+  max-width: var(--measure);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- Window chrome, reused from the app's vocabulary ---------- */
+
+.w {
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  padding: 3px;
+}
+
+.w__bar {
+  background: var(--title);
+  color: var(--title-text);
+  font-weight: bold;
+  padding: 3px 3px 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  user-select: none;
+}
+
+.w__btns {
+  display: flex;
+  gap: 2px;
+}
+
+/* Decorative only — there is no window to minimise. aria-hidden in the markup. */
+.w__btn {
+  width: 16px;
+  height: 14px;
+  background: var(--face);
+  box-shadow: var(--bevel-out);
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-base);
+  line-height: 1;
+}
+
+.w__body {
+  padding: 16px;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hero__mark {
+  font-size: var(--fs-4x);
+  line-height: var(--lh-4x);
+  font-weight: bold;
+  margin: 0;
+}
+
+/* The thesis. Sits at 2x so it reads as the second thing, not the third. */
+.hero__thesis {
+  font-size: var(--fs-2x);
+  line-height: var(--lh-2x);
+  font-weight: bold;
+  margin: 0;
+  color: var(--title);
+}
+
+.hero__body {
+  margin: 0;
+  max-width: 56ch;
+}
+
+.hero__body + .hero__body {
+  margin-top: var(--lh);
+}
+
+/* ---------- Buttons ---------- */
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pad);
+  align-items: center;
+}
+
+.btn {
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  background: var(--face);
+  color: var(--text);
+  box-shadow: var(--bevel-out);
+  border: 0;
+  padding: 6px 16px;
+  min-height: 26px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn:active {
+  box-shadow: var(--bevel-in);
+  /* Shift the label with the bevel, the way a real Win95 control pressed. */
+  padding: 7px 15px 5px 17px;
+}
+
+.btn--primary {
+  font-weight: bold;
+}
+
+/* ---------- Content blocks ---------- */
+
+.h2 {
+  font-size: var(--fs-2x);
+  line-height: var(--lh-2x);
+  font-weight: bold;
+  margin: 0 0 var(--lh);
+}
+
+.h3 {
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  font-weight: bold;
+  margin: 0 0 2px;
+  text-transform: uppercase;
+}
+
+.p {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.p + .p {
+  margin-top: var(--lh);
+}
+
+.dim {
+  color: var(--text-muted);
+}
+
+/* Numbered mechanic steps. Grid so the numerals align regardless of digit count. */
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.steps > li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--pad);
+  align-items: start;
+}
+
+.steps__n {
+  font-size: var(--fs-2x);
+  line-height: var(--lh-2x);
+  font-weight: bold;
+  color: var(--shadow);
+}
+
+/* Sunken panel, same as the app's .panel — used for the "what it costs you" caveats. */
+.panel {
+  background: var(--field);
+  box-shadow: var(--bevel-in);
+  padding: 16px;
+}
+
+.panel--note {
+  background: var(--note);
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.list > li + li {
+  margin-top: var(--gap);
+}
+
+/* ---------- Video ---------- */
+
+/* 16:9 without a plugin. `aspect-ratio` keeps it responsive down to a phone. */
+.video {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--dk-shadow);
+  box-shadow: var(--bevel-in);
+  display: grid;
+  place-items: center;
+}
+
+.video > iframe,
+.video > video {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.video__empty {
+  color: var(--hilite);
+  text-align: center;
+  padding: 16px;
+  max-width: 46ch;
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+  color: var(--hilite);
+  text-align: center;
+  padding-top: var(--pad);
+}
+
+.foot a {
+  color: var(--hilite);
+}
+
+/* ---------- Narrow screens ---------- */
+
+@media (max-width: 520px) {
+  body {
+    padding: 12px 8px 32px;
+  }
+
+  .w__body {
+    padding: 12px;
+  }
+
+  /* 44px would eat a third of a phone's width; the app's own 2x step still reads as a numeral. */
+  .hero__mark {
+    font-size: var(--fs-3x);
+    line-height: var(--lh-3x);
+  }
+
+  .steps > li {
+    grid-template-columns: 26px 1fr;
+  }
+
+  .steps__n {
+    font-size: var(--fs-base);
+    line-height: var(--lh);
+  }
+}

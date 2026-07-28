@@ -50,6 +50,12 @@ Rules that are easy to break:
   persists immediately. That combination is what lets a mid-reckoning refresh resume instead of losing decisions.
   Don't "optimize" the per-decision writes into one write at the end.
 - Keep → `keepCount += 1`, stays active. Drop → status `dropped`.
+- **`ReckoningOverlay` snapshots the queue on mount (`useState(queue)`) and walks that, never the live
+  prop.** `reckoningQueue` filters to active tasks, so a drop removes that task and shifts everything after
+  it down — while the cursor has just moved up. Walking the live queue skipped the task following every
+  drop, and it landed back on the list un-reckoned, which is the one thing the mechanic promises can't
+  happen. Keeping never showed it, because a kept task stays active and the array keeps its length. The
+  regression test lives in `reckoning.test.ts` ("shrinks and re-indexes when a task is dropped").
 
 `keepCount` drives an escalating shame badge; tiers and thresholds live only in `src/lib/shame.ts`.
 
@@ -281,6 +287,34 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
 - `localStorage` in the exe is scoped to Electron's own user-data directory, so **the desktop app and the browser
   version do not share tasks.** Expected, but surprising if you're testing both.
 - The exe is unsigned, so Windows SmartScreen warns on first run. Signing needs a real certificate.
+
+## The demo site (Vercel)
+
+The same build serves two pages. `vercel.json` maps `/` → `landing.html` and `/demo` → `index.html`.
+
+- **`index.html` must stay the app entry.** `electron/main.cjs` loads `dist/index.html`; making the landing
+  page the index would render the packaged exe blank. `vite.config.ts` adds `landing.html` as a *second*
+  rollup input rather than moving anything.
+- The rewrite targets have **no trailing slash** and `vercel.json` sets `"trailingSlash": false`. With
+  `base: './'` every asset URL is relative, so `/demo` resolves `./assets/x` against `/` and works — but
+  `/demo/` would resolve it against `/demo/` and 404 every script and font.
+- **`landing.css` deliberately does not import `global.css`.** That file pins `html/body` to 100% height
+  with `overflow: hidden`, because the app is a fixed frame that must never scroll; a landing page needs
+  the opposite. It imports `tokens.css` + `fonts.css` only, which is what keeps the two looking related.
+  The page honours the pixel-font rule — 11 / 22 / 33 / 44px and nothing between.
+- **Demo mode is detected from the path, not an env var** (`isDemoPath` in `src/lib/demo.ts`). One
+  mechanism that behaves identically in `npm run dev`, on Vercel, and in the exe — `file://` paths end in
+  `dist/index.html`, so the packaged app can never seed itself.
+- `demoState()` seeds a backlog dated in the past with `lastReckoningDate` = yesterday, so a visitor lands
+  **straight in a reckoning**. Without it the demo is pointless: `useStore` stamps today for anyone with no
+  history, so a stranger's first reckoning would be tomorrow's and they'd see an ordinary to-do list.
+  keepCounts are picked to walk the whole shame ladder, and the seeded `remindAt` carries a `remindedDate`
+  of today so no chime ambushes anyone.
+- Seeding is **once per tab session** (`sessionStorage`), so a refresh mid-play resumes. `shouldSeedDemo()`
+  is read-only and `markDemoSeeded()` runs in an effect — StrictMode invokes `useState` initializers twice,
+  and a check that also wrote the flag would seed on the first call and refuse on the second.
+- To verify a deploy locally, serve `dist/` through a stub that applies the same two rewrites. Loading
+  `dist/landing.html` off disk does **not** exercise them and will not catch a broken rewrite.
 
 ## Deliberately out of scope
 

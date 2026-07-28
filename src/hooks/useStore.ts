@@ -3,6 +3,7 @@ import type { AppState, Note, Task } from '../types'
 import { loadState, saveState, purge } from '../lib/storage'
 import { localDateString, isNewDay, addDays } from '../lib/dates'
 import { reckoningQueue } from '../lib/reckoning'
+import { demoState, markDemoSeeded, shouldSeedDemo } from '../lib/demo'
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
@@ -12,11 +13,20 @@ export function useStore() {
   const today = localDateString(new Date())
 
   const [state, setState] = useState<AppState>(() => {
+    // The public demo starts each visit with an overdue backlog, so the reckoning fires at once.
+    // Only ever true on the /demo route — see lib/demo.ts.
+    if (shouldSeedDemo()) return demoState(today)
     const loaded = loadState()
     // A first-ever visitor gets today stamped, so their first reckoning is tomorrow's.
     const seeded = loaded.lastReckoningDate ?? today
     return purge({ ...loaded, lastReckoningDate: seeded }, today)
   })
+
+  // Marked here rather than in the initializer above: StrictMode runs initializers twice, and a
+  // check that also wrote the flag would seed on the first call and refuse on the second.
+  useEffect(() => {
+    markDemoSeeded()
+  }, [])
 
   useEffect(() => {
     saveState(state)
