@@ -25,6 +25,30 @@ describe('reckoningQueue', () => {
     expect(reckoningQueue([], today)).toEqual([])
   })
 
+  /**
+   * The invariant behind ReckoningOverlay's queue snapshot.
+   *
+   * Dropping the task at position 1 pulls position 2 down into its place. An overlay that walks
+   * the LIVE queue with an incrementing cursor therefore lands on position 3 next and skips one
+   * entirely — it shipped that way, and the skipped task returned to the list un-reckoned. Keep
+   * never triggered it, because a kept task stays active and the array keeps its length.
+   */
+  it('shrinks and re-indexes when a task is dropped — why the overlay snapshots it', () => {
+    const a = task({ id: 'a' })
+    const b = task({ id: 'b' })
+    const c = task({ id: 'c' })
+    expect(reckoningQueue([a, b, c], today).map((t) => t.id)).toEqual(['a', 'b', 'c'])
+
+    const afterDrop = reckoningQueue([a, { ...b, status: 'dropped' }, c], today)
+    expect(afterDrop.map((t) => t.id)).toEqual(['a', 'c'])
+    // A cursor sitting at index 1 (b) moves to 2, which no longer exists: c is never shown.
+    expect(afterDrop[2]).toBeUndefined()
+
+    // Keeping leaves the length alone, which is why the bug only ever showed after a drop.
+    const afterKeep = reckoningQueue([a, { ...b, keepCount: 1 }, c], today)
+    expect(afterKeep).toHaveLength(3)
+  })
+
   it('includes active tasks created before today', () => {
     const t = task({ createdDate: '2026-07-25' })
     expect(reckoningQueue([t], today)).toEqual([t])

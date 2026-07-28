@@ -16,9 +16,21 @@ interface Props {
  * date must be stamped either way or the reckoning re-fires all day.
  */
 export function ReckoningOverlay({ queue, onKeep, onDrop, onFinish }: Props) {
+  /**
+   * Snapshot the queue on mount and walk that, never the live prop.
+   *
+   * `reckoningQueue` filters to active tasks, so dropping one removes it and shifts everything
+   * after it down — while this cursor has just moved up. The task following a drop was skipped
+   * entirely and landed back on the list un-reckoned, which is precisely what the whole mechanic
+   * promises cannot happen. Keeping never showed it, because a kept task stays active.
+   *
+   * A remount (mid-reckoning refresh) re-snapshots from the store, so decisions still persist
+   * and the review resumes rather than losing them.
+   */
+  const [items] = useState(queue)
   const [index, setIndex] = useState(0)
-  const total = queue.length
-  const task = queue[index]
+  const total = items.length
+  const task = items[index]
 
   // Focus the heading so screen readers and keyboard users land inside the overlay.
   useEffect(() => {
