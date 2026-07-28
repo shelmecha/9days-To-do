@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Note } from '../types'
-import { isBlank, matchesQuery, noteLabel, notePreview, sortNotes } from './notes'
+import { isBlank, matchesQuery, noteLabel, notePreview, previewText, sortNotes } from './notes'
 
 function note(over: Partial<Note> = {}): Note {
   return {
@@ -52,6 +52,26 @@ describe('notePreview', () => {
 
   it('returns an empty string for an empty body', () => {
     expect(notePreview(note({ body: '   ' }))).toBe('')
+  })
+})
+
+// The shared core, used directly by the task-row hover tooltip where there is no Note to wrap.
+describe('previewText', () => {
+  it('collapses every run of whitespace, including tabs and newlines', () => {
+    expect(previewText('call\tthe\n\n bank  today')).toBe('call the bank today')
+  })
+
+  it('truncates with an ellipsis at the limit', () => {
+    expect(previewText('y'.repeat(200), 10)).toBe(`${'y'.repeat(9)}…`)
+  })
+
+  it('leaves text exactly at the limit untouched', () => {
+    expect(previewText('abcde', 5)).toBe('abcde')
+  })
+
+  it('returns an empty string for empty or whitespace-only text', () => {
+    expect(previewText('')).toBe('')
+    expect(previewText(' \n\t ')).toBe('')
   })
 })
 

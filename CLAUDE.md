@@ -91,6 +91,24 @@ force a Keep/Drop decision on a thought that isn't work yet. `purge` must never 
 - Notes were added *after* v1 shipped, so `loadState` **migrates** (`notebook: [] `) rather than bumping `KEY` —
   bumping it would silently orphan every existing task.
 
+## A task's notes on the list
+
+`Task.notes` is free text on the task itself — **not** a notebook `Note`, and the two are never linked. It surfaces
+on the Today row as a `✎` chip (`TaskRow.tsx`), which is a real button: hovering the row previews the note,
+clicking the chip opens `TaskNoteDialog` with the full text, read-only.
+
+- The chip keeps `.badge` sizing. The 26px icon-button chrome used elsewhere (`.notecard__pin`) would break the
+  45px row height that lets eight rows fit the frame.
+- `NoteTip` is `position: fixed` **and portaled to `<body>`**. `.tasklist` is `overflow-y: auto` and `.win__body`
+  is `overflow-x: hidden`, so an in-flow popover is clipped the moment it reaches a list edge — and in a 300×500
+  frame it reaches one immediately. It measures itself in a `useLayoutEffect`, clamps to the window, and flips
+  above its anchor rather than fall off the bottom. `pointer-events: none` so it can never eat a click on the row.
+- The hover trigger sits on the whole `<li>`, with `onFocus`/`onBlur` alongside `onMouseEnter`/`onMouseLeave` —
+  React's focus events bubble, so tabbing to the chip arms the tooltip too. That keyboard equivalent is required,
+  not optional.
+- `hasNote` is `task.notes.trim().length > 0`. A plain truthiness check renders a chip for a note of only spaces.
+- `TaskNoteDialog` is read-only on purpose: `Edit…` hands off to `TaskDetail` rather than duplicating a save path.
+
 ## Dialogs
 
 `src/hooks/useDialog.ts` is shared by every dismissible dialog: Tab trap, Escape to close, and **focus restore on
@@ -293,9 +311,19 @@ broken again.
 
 For a **layout** check there is a much cheaper route than driving the exe: point a throwaway Electron main script
 at the dev server (`win.loadURL('http://localhost:5173')`, `useContentSize: true` at the frame size) and call
-`win.webContents.capturePage()`. It returns the renderer's own pixels regardless of window order, and the same
-script can drive the UI through `executeJavaScript` (click the menu, seed tasks, rewind `localStorage` and reload
-to force a reckoning). No `PrintWindow`, no packaging, no 20-second stub extraction.
+`win.webContents.capturePage()`. The same script can drive the UI through `executeJavaScript` (click the menu, seed
+tasks, rewind `localStorage` and reload to force a reckoning). No `PrintWindow`, no packaging, no 20-second stub
+extraction. Two things about this harness cost real time to learn:
+
+- **`capturePage()` silently returns a 0-byte PNG unless the window is focused and top-most.** Call `win.focus()`
+  and `win.moveTop()` (or set `alwaysOnTop: true`) and sleep a beat before capturing. It does not throw and the
+  `executeJavaScript` probes in the same script keep working, so the run looks successful and only the images are
+  empty — which reads as "the element never rendered" when the element rendered fine.
+- **To fire a React `onMouseEnter` from `executeJavaScript`, dispatch `mouseover` with `relatedTarget: null`.**
+  React synthesises enter/leave from `mouseover`/`mouseout` at the root; `relatedTarget: document.body` is an
+  *ancestor* of the target, so the synthesis walks no path and nothing fires. `null` means "arrived from outside
+  the document" and fires enter along the whole path. `webContents.sendInputEvent({type:'mouseMove'})` is the worse
+  option here — the real OS cursor position competes with the injected one, so hover state arrives out of order.
 
 For the packaged exe, both of these cost real time to learn the hard way:
 

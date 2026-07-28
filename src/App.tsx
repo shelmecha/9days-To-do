@@ -8,6 +8,7 @@ import { Window } from './components/win95/Window'
 import { QuickCapture } from './components/QuickCapture'
 import { TaskRow } from './components/TaskRow'
 import { TaskDetail } from './components/TaskDetail'
+import { TaskNoteDialog } from './components/TaskNoteDialog'
 import { DoneView } from './components/DoneView'
 import { NotesView } from './components/NotesView'
 import { NoteEditor } from './components/NoteEditor'
@@ -20,6 +21,9 @@ export default function App() {
   const [draft, setDraft] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
   const [openNoteId, setOpenNoteId] = useState<string | null>(null)
+  // A task's own notes, viewed read-only from the row's ✎. Distinct from openNoteId above,
+  // which is a notebook Note.
+  const [noteTaskId, setNoteTaskId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [captureMode, setCaptureMode] = useState(false)
   /**
@@ -64,6 +68,7 @@ export default function App() {
   const visible = tagFilter ? active.filter((t) => t.tags.includes(tagFilter)) : active
   const openTask = store.state.tasks.find((t) => t.id === openId) ?? null
   const openNote = store.state.notebook.find((n) => n.id === openNoteId) ?? null
+  const noteTask = store.state.tasks.find((t) => t.id === noteTaskId) ?? null
 
   // The reckoning blocks everything else. Rendered before any list markup exists.
   if (store.reckoningDue) {
@@ -197,6 +202,7 @@ export default function App() {
                     task={t}
                     onToggle={store.setCompleted}
                     onOpen={setOpenId}
+                    onOpenNote={setNoteTaskId}
                   />
                 ))
               )}
@@ -221,6 +227,17 @@ export default function App() {
           onSave={store.updateTask}
           onDelete={store.deleteTask}
           onClose={() => setOpenId(null)}
+        />
+      )}
+
+      {noteTask && (
+        <TaskNoteDialog
+          task={noteTask}
+          onEdit={() => {
+            setOpenId(noteTask.id)
+            setNoteTaskId(null)
+          }}
+          onClose={() => setNoteTaskId(null)}
         />
       )}
 

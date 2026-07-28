@@ -20,13 +20,21 @@ export function sortNotes(notes: Note[]): Note[] {
 }
 
 /**
- * A single-line teaser for the card. Newlines collapse to spaces — the card is one line in a
- * 360px-wide window, so a literal line break would just clip.
+ * A single-line teaser for free text. Newlines collapse to spaces — every caller shows this in
+ * a space too narrow for a literal line break, so one would just clip.
+ *
+ * Takes a string rather than a Note so a task's `notes` field can share it: the hover tooltip
+ * on a task row wants exactly this behaviour, and a Task is not a Note.
  */
-export function notePreview(note: Note, max = 60): string {
-  const flat = note.body.replace(/\s+/g, ' ').trim()
+export function previewText(body: string, max = 60): string {
+  const flat = body.replace(/\s+/g, ' ').trim()
   if (flat.length <= max) return flat
   return `${flat.slice(0, max - 1).trimEnd()}…`
+}
+
+/** A single-line teaser for the note card. */
+export function notePreview(note: Note, max = 60): string {
+  return previewText(note.body, max)
 }
 
 /** Case-insensitive match across title and body. Blank query matches everything. */

@@ -337,6 +337,18 @@ input[type='time'].field {
   margin-top: 2px;
 }
 
+/* The ✎ chip, now a real button. Sizing stays .badge's — the 26px icon-button chrome used
+   elsewhere (.notecard__pin) would blow the 45px row height that fits eight rows in the frame. */
+.taskrow__notebtn {
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.taskrow__notebtn:hover {
+  background: var(--note);
+}
+
 /* Covers both the interactive title button (Today) and the static span used in Done, which
    previously got the line-through from an inline style but missed the greying entirely — so a
    completed row looked different depending on which screen you saw it on. */
@@ -571,6 +583,41 @@ input[type='time'].field {
 }
 
 /* ---------- Overlays (reckoning, reminder, task detail) ---------- */
+
+/* ---------- Note tooltip / read-only note dialog ---------- */
+
+/* A real Win95 tooltip: sticky-note yellow, 1px black border, no bevel. Positioned from JS and
+   portaled to <body>, so .tasklist's overflow can't clip it — see NoteTip.tsx. */
+.notetip {
+  position: fixed;
+  z-index: 20;
+  max-width: 250px;
+  padding: 2px 4px;
+  background: var(--note);
+  border: 1px solid var(--text);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  color: var(--text);
+  /* Never intercepts a click meant for the row underneath it. */
+  pointer-events: none;
+  word-break: break-word;
+}
+
+/* Sunken and yellow so it reads as content to look at, not a field to type in. The max-height is
+   what keeps a 2000-character note inside the 500px frame; .win__body's scroll is the backstop. */
+.notedlg__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--note);
+  box-shadow: var(--bevel-in);
+  padding: var(--pad);
+  font-size: var(--fs-base);
+  line-height: var(--lh);
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 320px;
+}
 
 .reckoning {
   position: fixed;
