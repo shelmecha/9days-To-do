@@ -161,10 +161,26 @@
           <p class="p">&nbsp;</p>
           <div class="row">
             <a class="btn btn--primary" href="/demo">Open the demo</a>
-            <a class="btn" href="https://github.com/shelmecha/9days-To-do/releases"
-              >Download for Windows</a
+            <!--
+              /releases/latest/download/<asset> always resolves to the newest release, so this
+              link survives every future version without an edit. Pointing at /releases instead
+              just dumps the visitor on a list page — which read as broken back when no release
+              existed at all.
+            -->
+            <a
+              class="btn"
+              href="https://github.com/shelmecha/9days-To-do/releases/latest/download/9days-To-do.exe"
+              >Download for Windows (71 MB)</a
             >
           </div>
+          <p class="p">&nbsp;</p>
+          <p class="p dim">
+            The download is a portable <code>.exe</code> — nothing to install. It's unsigned, so
+            Windows SmartScreen will say &ldquo;Windows protected your PC&rdquo; the first time:
+            click <strong>More info</strong>, then <strong>Run anyway</strong>. Closing the window
+            hides it to the tray rather than quitting, because a closed app can't fire reminders.
+            <a href="https://github.com/shelmecha/9days-To-do/releases/latest">Release notes</a>.
+          </p>
         </div>
       </section>
 
