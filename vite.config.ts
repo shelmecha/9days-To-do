@@ -9,11 +9,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        // index.html MUST stay the app: electron/main.cjs loads dist/index.html, and the
-        // packaged exe would render blank if this moved. The web host maps / to landing.html
-        // and /demo to index.html instead — see vercel.json.
-        main: resolve(__dirname, 'index.html'),
-        landing: resolve(__dirname, 'landing.html'),
+        // index.html is the LANDING page and app.html is the application — not the other way
+        // round, which is the arrangement you would expect. Vercel resolves static files before
+        // rewrites, so an app at dist/index.html wins at / and no rewrite can get past it.
+        // electron/main.cjs loads dist/app.html to match.
+        landing: resolve(__dirname, 'index.html'),
+        app: resolve(__dirname, 'app.html'),
       },
     },
   },

@@ -13,10 +13,13 @@ describe('isDemoPath', () => {
   })
 
   it('leaves the real app alone', () => {
+    // The landing page.
     expect(isDemoPath('/')).toBe(false)
     expect(isDemoPath('/index.html')).toBe(false)
-    // How the packaged exe loads: file:// path ending in dist/index.html.
-    expect(isDemoPath('/C:/apps/9days/dist/index.html')).toBe(false)
+    // The app served directly, and how the dev server loads it for the Electron shell.
+    expect(isDemoPath('/app.html')).toBe(false)
+    // How the packaged exe loads: a file:// path ending in dist/app.html.
+    expect(isDemoPath('/C:/apps/9days/dist/app.html')).toBe(false)
     // A path that merely starts with the same letters must not count.
     expect(isDemoPath('/demonstration')).toBe(false)
   })

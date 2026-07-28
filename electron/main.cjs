@@ -89,10 +89,15 @@ function createWindow() {
 
   if (isDev) {
     // Vite hops to 5174, 5175, … when the default port is taken, so allow an override
-    // instead of failing to a blank window: VITE_DEV_URL=http://localhost:5175 electron .
-    win.loadURL(process.env.VITE_DEV_URL || 'http://localhost:5173')
+    // instead of failing to a blank window: VITE_DEV_URL=http://localhost:5175/app.html
+    //
+    // Note /app.html, not the root: the dev server's root is the landing page for the demo
+    // site. Loading / here gives you a working window showing the wrong thing, which is a
+    // slower thing to notice than a blank one.
+    win.loadURL(process.env.VITE_DEV_URL || 'http://localhost:5173/app.html')
   } else {
-    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    // app.html, NOT index.html — index.html is the landing page. See vite.config.ts.
+    win.loadFile(path.join(__dirname, '..', 'dist', 'app.html'))
   }
 
   // Closing hides to the tray instead of quitting — a closed app cannot fire reminders.

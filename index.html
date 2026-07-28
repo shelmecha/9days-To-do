@@ -3,10 +3,202 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>9days To-do</title>
+    <title>9days To-do — backlogs must shrink</title>
+    <meta
+      name="description"
+      content="A to-do app with one idea: nothing carries over silently. Every leftover task must be explicitly kept or dropped before you can reach your list."
+    />
+    <meta property="og:title" content="9days To-do — backlogs must shrink" />
+    <meta
+      property="og:description"
+      content="A to-do app with one idea: nothing carries over silently. Try the live demo."
+    />
+    <meta property="og:type" content="website" />
+    <!-- Vite rewrites this to the fingerprinted CSS at build time. -->
+    <link rel="stylesheet" href="/src/styles/landing.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="page">
+      <!-- ---------- Hero ---------- -->
+      <main class="w">
+        <div class="w__bar">
+          <span>9days To-do</span>
+          <span class="w__btns" aria-hidden="true">
+            <span class="w__btn">_</span>
+            <span class="w__btn">□</span>
+            <span class="w__btn">×</span>
+          </span>
+        </div>
+        <div class="w__body hero">
+          <h1 class="hero__mark">9days To-do</h1>
+          <p class="hero__thesis">Backlogs must shrink.</p>
+          <p class="hero__body">
+            Every other to-do app is happy to let a task sit in your list for a year. This one
+            won't. On the first load of each new day, every leftover task blocks your way, one per
+            screen, until you say out loud whether you still want it.
+          </p>
+          <p class="hero__body dim">
+            Keep it, and the app starts counting how many times you've kept it. Drop it, and it's
+            gone for good. There is no third option, no snooze, and no way past the screen.
+          </p>
+          <div class="row">
+            <a class="btn btn--primary" href="/demo">Try the live demo</a>
+            <a class="btn" href="#how">How it works</a>
+            <a class="btn" href="https://github.com/shelmecha/9days-To-do">Source on GitHub</a>
+          </div>
+        </div>
+      </main>
+
+      <!-- ---------- The mechanic ---------- -->
+      <section class="w" id="how">
+        <div class="w__bar">
+          <span>The Reckoning</span>
+          <span class="w__btns" aria-hidden="true"><span class="w__btn">×</span></span>
+        </div>
+        <div class="w__body">
+          <h2 class="h2">One rule, enforced</h2>
+          <ol class="steps">
+            <li>
+              <span class="steps__n" aria-hidden="true">1</span>
+              <div>
+                <h3 class="h3">It fires on its own</h3>
+                <p class="p">
+                  The first time you open the app on a new day, it stops being a list and becomes a
+                  review. You don't summon it and you can't postpone it.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="steps__n" aria-hidden="true">2</span>
+              <div>
+                <h3 class="h3">Keep or drop — nothing else</h3>
+                <p class="p">
+                  One task per full screen. No skip button, no escape key, no closing the window.
+                  Tasks you wrote today are exempt; you can't be shamed for something an hour old.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="steps__n" aria-hidden="true">3</span>
+              <div>
+                <h3 class="h3">Keeping has a cost</h3>
+                <p class="p">
+                  Every keep increments a counter that follows the task around as a badge. At three
+                  it's a note. At nine it reads
+                  <strong>&ldquo;Kept 9× — be honest&rdquo;</strong>, and the review stops asking
+                  whether it's still worth your time and asks whether it was ever real work.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ---------- Video ---------- -->
+      <section class="w">
+        <div class="w__bar">
+          <span>Media Player — 9days To-do</span>
+          <span class="w__btns" aria-hidden="true"><span class="w__btn">×</span></span>
+        </div>
+        <div class="w__body">
+          <div class="video">
+            <!--
+              DROP YOUR VIDEO IN HERE, replacing this whole .video__empty paragraph.
+
+              YouTube / Vimeo:
+                <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="9days To-do demo"
+                        allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+                        allowfullscreen></iframe>
+
+              A file you host yourself — put it in public/ and reference it absolutely:
+                <video controls preload="metadata" poster="/demo-poster.png">
+                  <source src="/demo.mp4" type="video/mp4" />
+                </video>
+            -->
+            <p class="video__empty">
+              Video goes here — see the comment in <code>index.html</code> for the two lines to
+              paste.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- Try it ---------- -->
+      <section class="w">
+        <div class="w__bar">
+          <span>Try it</span>
+          <span class="w__btns" aria-hidden="true"><span class="w__btn">×</span></span>
+        </div>
+        <div class="w__body">
+          <h2 class="h2">The real app, in your browser</h2>
+          <p class="p">
+            The demo is the actual application, not a mock-up. It opens with a backlog that is
+            already overdue, so you land straight in a reckoning and feel the thing the app is
+            about within a few seconds.
+          </p>
+          <p class="p">&nbsp;</p>
+          <div class="panel panel--note">
+            <h3 class="h3">Worth knowing before you click</h3>
+            <ul class="list">
+              <li>
+                Everything stays in your browser. There is no account, no server, and nothing
+                leaves your machine.
+              </li>
+              <li>
+                The demo reseeds its example tasks once per visit, so your own experiments won't
+                survive a new tab. That's on purpose.
+              </li>
+              <li>
+                It's a fixed 300 × 500 window — that's the real shape of the desktop app, not a
+                responsive layout that happens to be narrow.
+              </li>
+              <li>
+                Reminders and the tray behaviour only exist in the Windows build; a browser tab
+                can't nudge you once it's closed.
+              </li>
+            </ul>
+          </div>
+          <p class="p">&nbsp;</p>
+          <div class="row">
+            <a class="btn btn--primary" href="/demo">Open the demo</a>
+            <a class="btn" href="https://github.com/shelmecha/9days-To-do/releases"
+              >Download for Windows</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- Build notes ---------- -->
+      <section class="w">
+        <div class="w__bar">
+          <span>Properties</span>
+          <span class="w__btns" aria-hidden="true"><span class="w__btn">×</span></span>
+        </div>
+        <div class="w__body">
+          <h2 class="h2">How it's built</h2>
+          <p class="p">
+            React and TypeScript on Vite, packaged for Windows with Electron. No backend, no
+            accounts, no network calls — state lives in <code>localStorage</code>.
+          </p>
+          <p class="p">&nbsp;</p>
+          <p class="p">
+            The Windows 95 shell is hand-rolled CSS with no UI library, down to the bevels and a
+            pixel-accurate MS Sans Serif recreation drawn for 11px. That constraint is why the whole
+            interface — and this page — uses one type size and carries hierarchy with weight,
+            colour and case instead.
+          </p>
+          <p class="p">&nbsp;</p>
+          <p class="p dim">
+            The retro look doesn't cost accessibility: real semantics, full keyboard support, and
+            visible focus rings throughout. The dotted outline is both period-accurate and usable.
+          </p>
+        </div>
+      </section>
+
+      <p class="foot">
+        Built by <a href="https://github.com/shelmecha">shelmecha</a> ·
+        <a href="https://github.com/shelmecha/9days-To-do">github.com/shelmecha/9days-To-do</a>
+      </p>
+    </div>
   </body>
 </html>

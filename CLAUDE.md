@@ -217,7 +217,8 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
 - It is **`.cjs`, not `.js`** — `package.json` sets `"type": "module"`, which Electron's main process rejects.
 - `vite.config.ts` sets **`base: './'`**. Absolute asset paths 404 over `file://`, so the packaged window would
   render blank. Don't remove it.
-- In dev the shell loads `VITE_DEV_URL` if set, else `http://localhost:5173`. Vite hops to 5174/5175 when the
+- In dev the shell loads `VITE_DEV_URL` if set, else `http://localhost:5173/app.html` — **note the path**;
+  the dev root is the demo site's landing page. Vite hops to 5174/5175 when the
   default port is taken, which otherwise gives you a blank frameless window and no clue why:
   `VITE_DEV_URL=http://localhost:5175 npx electron .`
 - The window is **frameless** (`frame: false`) — the app's own Win95 title bar is the real chrome. Its buttons work
@@ -290,12 +291,18 @@ task detail dialog, reckoning overlay. Three menu items, no more — the window 
 
 ## The demo site (Vercel)
 
-The same build serves two pages. `vercel.json` maps `/` → `landing.html` and `/demo` → `index.html`.
+The same build serves two pages: `/` is the landing page and `/demo` is the app.
 
-- **`index.html` must stay the app entry.** `electron/main.cjs` loads `dist/index.html`; making the landing
-  page the index would render the packaged exe blank. `vite.config.ts` adds `landing.html` as a *second*
-  rollup input rather than moving anything.
-- The rewrite targets have **no trailing slash** and `vercel.json` sets `"trailingSlash": false`. With
+- **`index.html` is the LANDING page and `app.html` is the application** — the reverse of what you would
+  expect, and the reason is not stylistic. **Vercel resolves static files BEFORE rewrites**: a rewrite is
+  only consulted when nothing on disk matches. With the app at `dist/index.html`, `/` matched a real file
+  and `{"source": "/", "destination": "/landing.html"}` never fired — the deploy served the app at the
+  root and the landing page was reachable only at `/landing.html`. That shipped. Naming the landing page
+  `index.html` is the only arrangement where `/` serves the site *and* `/demo` can rewrite to the app.
+- Consequences to keep in step: `electron/main.cjs` loads `dist/app.html` (not `index.html`) and its dev
+  URL is `http://localhost:5173/app.html`. Loading the dev root gives a working window showing the landing
+  page, which is slower to notice than a blank one.
+- The rewrite target has **no trailing slash** and `vercel.json` sets `"trailingSlash": false`. With
   `base: './'` every asset URL is relative, so `/demo` resolves `./assets/x` against `/` and works — but
   `/demo/` would resolve it against `/demo/` and 404 every script and font.
 - **`landing.css` deliberately does not import `global.css`.** That file pins `html/body` to 100% height
@@ -304,7 +311,7 @@ The same build serves two pages. `vercel.json` maps `/` → `landing.html` and `
   The page honours the pixel-font rule — 11 / 22 / 33 / 44px and nothing between.
 - **Demo mode is detected from the path, not an env var** (`isDemoPath` in `src/lib/demo.ts`). One
   mechanism that behaves identically in `npm run dev`, on Vercel, and in the exe — `file://` paths end in
-  `dist/index.html`, so the packaged app can never seed itself.
+  `dist/app.html`, so the packaged app can never seed itself.
 - `demoState()` seeds a backlog dated in the past with `lastReckoningDate` = yesterday, so a visitor lands
   **straight in a reckoning**. Without it the demo is pointless: `useStore` stamps today for anyone with no
   history, so a stranger's first reckoning would be tomorrow's and they'd see an ordinary to-do list.
@@ -314,7 +321,8 @@ The same build serves two pages. `vercel.json` maps `/` → `landing.html` and `
   is read-only and `markDemoSeeded()` runs in an effect — StrictMode invokes `useState` initializers twice,
   and a check that also wrote the flag would seed on the first call and refuse on the second.
 - To verify a deploy locally, serve `dist/` through a stub that applies the same two rewrites. Loading
-  `dist/landing.html` off disk does **not** exercise them and will not catch a broken rewrite.
+  `dist/index.html` off disk does **not** exercise them, and will not catch a broken rewrite — that is
+  exactly how the `/`-rewrite bug above reached production.
 
 ## Deliberately out of scope
 
@@ -344,7 +352,7 @@ broken again.
 ### Driving the packaged app without a person at the keyboard
 
 For a **layout** check there is a much cheaper route than driving the exe: point a throwaway Electron main script
-at the dev server (`win.loadURL('http://localhost:5173')`, `useContentSize: true` at the frame size) and call
+at the dev server (`win.loadURL('http://localhost:5173/app.html')`, `useContentSize: true` at the frame size) and call
 `win.webContents.capturePage()`. The same script can drive the UI through `executeJavaScript` (click the menu, seed
 tasks, rewind `localStorage` and reload to force a reckoning). No `PrintWindow`, no packaging, no 20-second stub
 extraction. Two things about this harness cost real time to learn:

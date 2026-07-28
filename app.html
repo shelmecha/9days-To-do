@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>9days To-do</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      This is the APP entry, not the site's index — index.html is the landing page.
+
+      Vercel resolves static files BEFORE rewrites, so a dist/index.html containing the app wins
+      at / and no rewrite can ever redirect past it. Naming the landing page index.html is the
+      only arrangement where / serves the site and /demo can rewrite to the app.
+    -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

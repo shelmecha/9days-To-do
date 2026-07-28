@@ -14,7 +14,7 @@ import { addDays } from './dates'
  * into the gauntlet. The keepCounts are chosen to walk the whole shame ladder on the way down.
  *
  * None of this touches the real app: the seed only applies on the /demo path, so the Electron
- * shell (which loads dist/index.html) and `npm run dev` at / can never trigger it.
+ * shell (which loads dist/app.html) and the dev server at /app.html can never trigger it.
  */
 
 /** Set once per tab session, so a refresh mid-play resumes instead of wiping the visitor's work. */
