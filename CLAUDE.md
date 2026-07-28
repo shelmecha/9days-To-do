@@ -6,18 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm install
-npm run dev          # Vite dev server on :5173
+npm run dev          # Vite dev server on :5173 — NOTE: / is the landing page, the app is /app.html
 npm test             # Vitest, single run
 npm run test:watch
-npm run build        # tsc --noEmit && vite build
+npm run build        # tsc --noEmit && vite build (emits BOTH pages: index.html + app.html)
 
 npm run icons        # regenerate build/icon.ico + tray.png from scripts/make-icons.mjs
 npm run electron:dev # Electron shell against the running dev server (start `npm run dev` first)
-npm run dist         # icons + build + package release/9days-To-do.exe (portable, ~72 MB)
+npm run dist         # icons + build + package release/9days-To-do.exe (portable, ~71 MB)
 ```
 
+**`http://localhost:5173/` is the demo site's landing page, not the app** — the app is at
+`/app.html`. See "The demo site" below for why the entries are named that way round. Opening the
+root and finding a marketing page is the expected behaviour, not a broken build.
+
 `npm run dist` **fails or hangs if the app is already running** — the exe holds a lock on
-`release/`. Kill the "9days To-do" processes first.
+`release/`. Kill the "9days To-do" processes first:
+`Get-Process | Where ProcessName -match '^9days' | Stop-Process -Force`
 
 Run a single test file: `npx vitest run src/lib/dates.test.ts`
 Run one test by name: `npx vitest run -t "does not fire when the clock has moved backwards"`
@@ -30,6 +35,12 @@ A to-do app whose single idea is that **backlogs must shrink**. Nothing carries 
 horizon, sprint, or expiry rule. Don't invent one.
 
 Built as a portfolio/demo piece: it must communicate its idea within ten seconds of a stranger opening it.
+
+**Live:** <https://9days-to-do.vercel.app> — `/` is the landing page, `/demo` is the app seeded to drop a
+visitor straight into a reckoning. Windows build at
+<https://github.com/shelmecha/9days-To-do/releases/latest>. (The `*-shelvi-s-projects.vercel.app` URLs in
+Vercel's dashboard are login-walled per-deployment aliases; the bare one above is the public production
+alias. Don't share the long ones — they 200 with a Vercel login page, which looks like the site is down.)
 
 ## The Reckoning (the core mechanic)
 
@@ -320,14 +331,45 @@ The same build serves two pages: `/` is the landing page and `/demo` is the app.
 - Seeding is **once per tab session** (`sessionStorage`), so a refresh mid-play resumes. `shouldSeedDemo()`
   is read-only and `markDemoSeeded()` runs in an effect — StrictMode invokes `useState` initializers twice,
   and a check that also wrote the flag would seed on the first call and refuse on the second.
-- To verify a deploy locally, serve `dist/` through a stub that applies the same two rewrites. Loading
-  `dist/index.html` off disk does **not** exercise them, and will not catch a broken rewrite — that is
-  exactly how the `/`-rewrite bug above reached production.
+- To verify a deploy locally, serve `dist/` through a stub that reproduces Vercel's **order**: filesystem
+  first (including the implicit directory index), rewrites only as a fallback, and `trailingSlash: false`
+  as a **308 redirect** rather than an internal strip — only a redirect changes the browser's base URL,
+  which is what lets `base: './'` resolve `./assets/*` from `/demo/`. A stub that rewrites first, or that
+  strips the slash server-side, passes while production fails. Loading `dist/index.html` off disk exercises
+  none of it. Both mistakes shipped bugs in one session.
+
+## Releases
+
+The exe is **not in the repo** (`release/` is gitignored), so a download link only works if a GitHub
+Release exists with the binary attached. The landing page's download button assumed one did, and pointed
+at an empty `/releases` page for its first day.
+
+```bash
+# 1. Quit any running copy, or the build fails on the release/ lock
+Get-Process | Where ProcessName -match '^9days' | Stop-Process -Force
+npm run dist
+
+# 2. Cut the release with the exe attached (gh is installed and authed as shelmecha)
+gh release create vX.Y.Z "release/9days-To-do.exe" --title "..." --notes "..."
+```
+
+- The landing page links to **`/releases/latest/download/9days-To-do.exe`**, which always resolves to the
+  newest release. Keep the asset filename stable (`portable.artifactName` in `package.json`) or that link
+  silently 404s for everyone.
+- Verify the link resolves before trusting it — `curl -sIL <url>` should end in a `200` with a real
+  `Content-Length`, not just a `302`.
+- Tag versions from `package.json`'s `version`. Bump it when you cut a release.
+- **Rebuild before releasing** if anything changed since the last `npm run dist`. The packaged exe embeds
+  its own copy of `dist/`, so a stale build can be internally consistent yet months behind `main`.
 
 ## Deliberately out of scope
 
 Stats/streaks, import/export JSON, cross-device sync, accounts, i18n. Don't add opportunistically.
 (Reminders and the notebook *were* on this list and are now built — see above.)
+
+The demo site is a **shop window, not a second product.** It gets a landing page and a seeded `/demo`, and
+that is the whole remit: no blog, no docs site, no analytics, no signup, no changelog page. Anything that
+would need a backend contradicts the app itself, which has none.
 
 **Known accepted risk:** data lives only in this browser's `localStorage` and there is no export, so clearing site
 data destroys it permanently. Nothing in the UI says so any more — the footer notice was cut when the window
