@@ -57,8 +57,15 @@ This produces a portable Windows executable in the `release/` directory.
 A hosted web version is available at: https://9days-to-do.vercel.app
 
 ## Screenshots
+<img width="612" height="1012" alt="1" src="https://github.com/user-attachments/assets/28396474-4f24-4832-8180-086c8c9764c3" />
+<img width="612" height="1012" alt="2" src="https://github.com/user-attachments/assets/9a02b754-5177-4ba6-9b4e-6bc2809c5079" />
+<img width="612" height="1012" alt="3" src="https://github.com/user-attachments/assets/5b16112c-aa20-472f-ae8b-5908e9c420d6" />
+<img width="612" height="1012" alt="4" src="https://github.com/user-attachments/assets/1cc71334-7074-43c4-94c2-7f9c9b8dafad" />
+<img width="612" height="1012" alt="5" src="https://github.com/user-attachments/assets/1965aa59-0f83-46df-bf3f-d73f39eb447e" />
+<img width="612" height="1012" alt="6" src="https://github.com/user-attachments/assets/551c8694-33df-44a2-9d3d-f474e8fecc66" />
+<img width="612" height="1012" alt="7" src="https://github.com/user-attachments/assets/ef3b4c21-87c2-4d49-a980-7fb9a653a7bd" />
+<img width="612" height="1012" alt="8" src="https://github.com/user-attachments/assets/8cb14ee5-5e5b-4d31-b398-bde75f5229fa" />
 
-_Coming soon — contributions with screenshots/GIFs are very welcome!_
 
 ## Roadmap
 
