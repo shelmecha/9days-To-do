@@ -42,6 +42,12 @@ export function shouldSeedDemo(): boolean {
 }
 
 export function markDemoSeeded(): void {
+  // The flag means "this session's demo has been seeded", so only the demo may set it. useStore
+  // calls this from an unconditional effect, so without the guard a visit to /app.html would
+  // stamp the session and the demo would then load EMPTY for the rest of that tab's life —
+  // no seeded backlog, no reckoning, which is the entire point of the demo.
+  if (typeof window === 'undefined') return
+  if (!isDemoPath(window.location.pathname)) return
   try {
     sessionStorage.setItem(SESSION_KEY, '1')
   } catch {

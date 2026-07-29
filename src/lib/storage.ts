@@ -1,7 +1,28 @@
 import type { AppState } from '../types'
 import { daysBetween } from './dates'
+import { isDemoPath } from './demo'
 
 const KEY = '9days-todo/v1'
+
+/**
+ * The demo writes somewhere else entirely.
+ *
+ * `/demo` and `/app.html` are the same origin, so they share one localStorage. The demo reseeds on
+ * every new session — which, on a shared key, silently overwrites the tasks of anyone actually using
+ * the app at `/app.html`. No warning, no undo. Namespacing on the same condition that enables seeding
+ * makes that unrepresentable rather than merely unlikely.
+ */
+const DEMO_KEY = '9days-todo/demo/v1'
+
+/** Pure, so the split is testable without a browser. */
+export function storageKeyFor(pathname: string): string {
+  return isDemoPath(pathname) ? DEMO_KEY : KEY
+}
+
+function storageKey(): string {
+  if (typeof window === 'undefined') return KEY
+  return storageKeyFor(window.location.pathname)
+}
 
 export const PURGE_AFTER_DAYS = 30
 
@@ -9,7 +30,7 @@ const EMPTY: AppState = { tasks: [], notebook: [], lastReckoningDate: null }
 
 export function loadState(): AppState {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(storageKey())
     if (!raw) return EMPTY
     const parsed = JSON.parse(raw) as Partial<AppState>
     return {
@@ -27,7 +48,7 @@ export function loadState(): AppState {
 
 export function saveState(state: AppState): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state))
+    localStorage.setItem(storageKey(), JSON.stringify(state))
   } catch {
     // Quota or private-mode failure. Nothing useful to do; the UI stays usable in-memory.
   }

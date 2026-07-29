@@ -27,6 +27,13 @@ root and finding a marketing page is the expected behaviour, not a broken build.
 Run a single test file: `npx vitest run src/lib/dates.test.ts`
 Run one test by name: `npx vitest run -t "does not fire when the clock has moved backwards"`
 
+```bash
+npx playwright test               # Run all e2e tests (smoke + portfolio-demo)
+npx playwright test --ui          # Headed UI mode
+npx playwright test app.spec.ts   # Smoke test only
+npx playwright test portfolio-demo.spec.ts --headed  # Portfolio-demo with visible browser
+```
+
 ## What this app is
 
 A to-do app whose single idea is that **backlogs must shrink**. Nothing carries over silently.
@@ -323,6 +330,23 @@ The same build serves two pages: `/` is the landing page and `/demo` is the app.
 - **Demo mode is detected from the path, not an env var** (`isDemoPath` in `src/lib/demo.ts`). One
   mechanism that behaves identically in `npm run dev`, on Vercel, and in the exe — `file://` paths end in
   `dist/app.html`, so the packaged app can never seed itself.
+- **`vite.config.ts` mirrors the `/demo` rewrite in the dev server** (the `demoRoute` plugin). Without it
+  Vite's SPA fallback serves `index.html` — the *landing page* — for `/demo`, so dev and production
+  disagreed and the demo could not be tested locally at all. It is a server-side rewrite, so the browser
+  URL stays `/demo` and `isDemoPath` still sees it.
+- **The demo writes to its own storage key** (`storageKeyFor` in `storage.ts`). `/demo` and `/app.html` are
+  the same origin and therefore share one `localStorage`; on a shared key the demo's per-session reseed
+  silently destroyed the tasks of anyone using the app at `/app.html`. Namespacing on the same condition
+  that enables seeding makes that unrepresentable. **Never collapse the two keys back into one.**
+- **`markDemoSeeded()` must refuse to stamp the session off the demo path.** `useStore` calls it from an
+  unconditional effect, so without that guard visiting `/app.html` first marked the tab as already-seeded
+  and the demo then loaded **empty** — no backlog, no reckoning — for the rest of that tab's life. Unit
+  tests missed it entirely because they only ever opened `/demo` directly.
+- The app entry carries `<meta name="robots" content="noindex">` and both pages set a canonical URL, so
+  the app shell (served at both `/demo` and `/app.html`) cannot outrank the landing page — a crawler would
+  otherwise index an empty `<div>` competing for the same query.
+- All of the above is covered by **`e2e/demo-isolation.spec.ts`**, which needs one browser context across
+  two pages — something the pure-logic tests cannot express.
 - `demoState()` seeds a backlog dated in the past with `lastReckoningDate` = yesterday, so a visitor lands
   **straight in a reckoning**. Without it the demo is pointless: `useStore` stamps today for anyone with no
   history, so a stranger's first reckoning would be tomorrow's and they'd see an ordinary to-do list.
@@ -376,6 +400,19 @@ data destroys it permanently. Nothing in the UI says so any more — the footer 
 shrank. Export is the first thing to revisit.
 
 ## Testing
+
+### End-to-end tests (Playwright)
+
+Two e2e tests drive the app at `localhost:5173/app.html` in Chromium:
+
+- **`e2e/app.spec.ts`** (smoke test): Verifies the app loads, menu buttons render, quick-add is focused and visible, and no page errors occur. Lightweight verification that the core UI is intact.
+- **`e2e/portfolio-demo.spec.ts`** (portfolio workflow): Records a polished 25-45s video demonstrating the app's key interactions: capturing tasks (1s between each), completing one (count drops), editing a task (adding note/tag/reminder), triggering a reckoning by date rollover, and walking through Keep/Drop decisions. Includes a seeded task with ⛔ KEPT 9× to show the shame mechanic. Runs in headed mode and saves `portfolio-assets/9days-raw-demo.webm` (480×640, JPEG 95% quality).
+
+**Config:** `playwright.config.ts` sets `baseURL` to `localhost:5173/app.html`, video recording at 480×640 with JPEG quality 95, and `reuseExistingServer: true` so tests run against a live `npm run dev` without restarting it. Only Chromium is configured.
+
+**Portfolio video**: The recording lives at `portfolio-assets/9days-raw-demo.webm` and is copied into the Remotion reel at `C:\Users\Shelvi\Documents\GitHub\Remotion\public\demos\9-days-to-do\raw-demo.webm` — byte-identical, verified by hash.
+
+### Unit tests (Vitest)
 
 `src/lib/*.test.ts` cover the pure logic (55 tests): local-date formatting, `isNewDay` (same day, next day,
 multi-day gap, backwards clock, DST transition), `addDays` across month/year/leap/DST boundaries, the reckoning

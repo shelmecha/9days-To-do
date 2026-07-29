@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>9days To-do</title>
+    <!--
+      Keep the app entry out of search results. It is served at both /demo and /app.html, and an
+      indexable app shell competes with the landing page for the same query while showing a crawler
+      nothing but an empty <div>. / is the page that should rank; this one is for people who
+      clicked through.
+    -->
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://9days-to-do.vercel.app/" />
   </head>
   <body>
     <div id="root"></div>
