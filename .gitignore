@@ -10,3 +10,7 @@ build
 # Playwright artefacts: videos/traces (test-results) and the HTML reporter output
 test-results
 playwright-report
+# The portfolio recording + its landmark manifest, written by e2e/portfolio-demo.spec.ts.
+# Build output, not source: `npx playwright test portfolio-demo.spec.ts` regenerates both in ~50s.
+# Kept on disk rather than deleted — the Remotion project's scripts/sync-demo.mjs reads from here.
+portfolio-assets

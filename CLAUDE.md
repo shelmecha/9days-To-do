@@ -410,7 +410,18 @@ Two e2e tests drive the app at `localhost:5173/app.html` in Chromium:
 
 **Config:** `playwright.config.ts` sets `baseURL` to `localhost:5173/app.html`, video recording at 480×640 with JPEG quality 95, and `reuseExistingServer: true` so tests run against a live `npm run dev` without restarting it. Only Chromium is configured.
 
-**Portfolio video**: The recording lives at `portfolio-assets/9days-raw-demo.webm` and is copied into the Remotion reel at `C:\Users\Shelvi\Documents\GitHub\Remotion\public\demos\9-days-to-do\raw-demo.webm` — byte-identical, verified by hash.
+**Portfolio video**: the spec writes `portfolio-assets/9days-raw-demo.webm` plus `9days-demo-landmarks.json`.
+
+- **`portfolio-assets/` is gitignored** — build output, not source. Re-run the spec to regenerate both
+  (~50s). It is *not* deleted from disk, because the Remotion project reads from here.
+- The reel lives in its own repository at `C:\Users\Shelvi\Documents\GitHub\Remotion` (a separate git
+  repo, not a subdirectory of this one). Pull a fresh take with
+  `node scripts/sync-demo.mjs <path-to-this-repo>` **from that project** — it copies the webm and its
+  manifest together and re-solves the screencast offset. Never copy the webm across by hand: the two are
+  only meaningful as a pair, and a manifest from a different take fits well enough to look right while
+  putting every caption a second out.
+- The webm is committed **in the Remotion repo**, because that project cannot regenerate it — it is an
+  input produced here. The rendered `.mp4` is gitignored there, being rebuildable from the two.
 
 ### Unit tests (Vitest)
 
