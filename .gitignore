@@ -7,3 +7,6 @@ release
 build
 .DS_Store
 *.local
+# Playwright artefacts: videos/traces (test-results) and the HTML reporter output
+test-results
+playwright-report
